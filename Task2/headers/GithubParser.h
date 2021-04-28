@@ -25,7 +25,7 @@ public:
 	explicit GithubRepoQuery(const std::wstring& strRepoFullPath) : m_strRepoFullPath(strRepoFullPath)
 	{}
 
-public:
+
 	bool createUriToReadmeContentRequest(web::http::http_request& request) const;
 
 private:
@@ -33,24 +33,19 @@ private:
 	[[nodiscard]] std::wstring createToReadmeContentRequest() const;
 	std::wstring getRepoName() const;
 
-private:
+
 	std::wstring m_strRepoFullPath;
 };
 
 class GithubPatternsParser
 {
 public:
-	static void ScanRepositories( const std::set<std::wstring>& githubReposPaths,
-								  const std::set<std::wstring>& strReqPatterns);
+	static void ScanRepositories( const std::set<std::wstring>& githubReposPaths, const std::set<std::wstring>& strReqPatterns);
 
-	static void ScanRepository( const std::wstring& githubRepoPath,
-								const std::set<std::wstring>& strReqPatterns);
-
-
+	static void ScanRepository( const std::wstring& githubRepoPath, const std::set<std::wstring>& strReqPatterns);
 
 private:
-	static std::set<std::wstring> CheckReqPatternsInProjectsReadme(const std::wstring& githubRepoPath,
-																   const std::set<std::wstring>& strReqPatterns);
+	static std::set<std::wstring> CheckReqPatternsInProjectsReadme(const std::wstring& githubRepoPath, const std::set<std::wstring>& strReqPatterns);
 
 	static void PrintPatternsName(const std::set<std::wstring>& patterns);
 };

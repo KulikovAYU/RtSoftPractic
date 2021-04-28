@@ -19,14 +19,6 @@ void display_json(json::value const& jValue, utility::string_t const& prefix)
 	std::wcout << prefix << jValue.serialize() << std::endl;
 }
 
-bool comparei(std::wstring stringA, std::wstring stringB)
-{
-	std::transform(stringA.begin(), stringA.end(), stringA.begin(), toupper);
-	std::transform(stringB.begin(), stringB.end(), stringB.begin(), toupper);
-
-	return (stringA == stringB);
-}
-
 std::wstring toUpper(std::wstring srcString)
 {
 	std::transform(srcString.begin(), srcString.end(), srcString.begin(), toupper);
