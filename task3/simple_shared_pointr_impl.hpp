@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <atomic>
 #include <new>
 
@@ -179,6 +179,6 @@ int main()
     rt_soft_autumn_school::shared_ptr<Test> ptr(new Test());
 
 
-    system('pause');
+    system("pause");
     return 0;
 }
