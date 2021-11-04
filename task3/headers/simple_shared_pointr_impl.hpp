@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <atomic>
 #include <new>
+#include <mutex>
 
 
 namespace rt_soft_autumn_school
@@ -73,8 +74,6 @@ namespace rt_soft_autumn_school
 
 		constexpr shared_ptr() noexcept = delete;
 
-		constexpr shared_ptr(nullptr_t) noexcept : ptr_contr_block_{ new(std::nothrow) ref_count<T>(nullptr_t) } {} //cause we can construct empty shared_ptr
-
 		shared_ptr(const shared_ptr& rhs) noexcept {
 			this->copy_construct_from(rhs);
 		}
@@ -87,12 +86,8 @@ namespace rt_soft_autumn_school
 			this->move_construct_from(std::move(rhs));
 		}
 
-		NODISCARD_DEF size_t use_count() const noexcept {
-			return ptr_contr_block_ ? ptr_contr_block_->use_count() : 0;
-		}
-
 		shared_ptr& operator=(const shared_ptr& rhs) noexcept {
-			if (*this == &rhs)
+			if (this == &rhs)
 				return *this;
 
 			//copy and swap
@@ -101,11 +96,11 @@ namespace rt_soft_autumn_school
 			return *this;
 		}
 
-		shared_ptr& operator=(shared_ptr&& rhs) noexcept { //take recoure from rhs
-			if (*this == &rhs)
+		shared_ptr& operator=(shared_ptr&& rhs) noexcept { //take recourse from rhs
+			if (this == &rhs)
 				return *this;
 
-			//let's make prvalue, cause rhs - is lvalue
+			//let's make prvalue, because rhs - is lvalue
 			shared_ptr(std::move(rhs)).swap(*this);
 
 			return *this;
@@ -113,6 +108,10 @@ namespace rt_soft_autumn_school
 
 		~shared_ptr() {
 			this->decref();
+		}
+
+		NODISCARD_DEF size_t use_count() const noexcept {
+			return ptr_contr_block_ ? ptr_contr_block_->use_count() : 0;
 		}
 
 		NODISCARD_DEF T& operator*() const noexcept {
@@ -132,6 +131,8 @@ namespace rt_soft_autumn_school
 		template<typename T2>
 		void move_construct_from(shared_ptr<T2>&& rhs) noexcept {
 
+			std::scoped_lock guard_(sync_, rhs.sync_);
+
 			this->p_data_ = rhs.p_data_;
 			this->ptr_contr_block_ = rhs.ptr_contr_block_;
 
@@ -143,6 +144,8 @@ namespace rt_soft_autumn_school
 		template<typename T2>
 		void copy_construct_from(const shared_ptr<T2>& rhs) noexcept {
 
+			std::scoped_lock guard_(sync_, rhs.sync_);
+
 			rhs.incref();
 
 			this->p_data_ = rhs.p_data_;
@@ -152,6 +155,8 @@ namespace rt_soft_autumn_school
 
 		void swap(shared_ptr& rhs) noexcept
 		{
+			std::scoped_lock guard_(sync_, rhs.sync_);
+
 			using std::swap;
 			swap(this->p_data_, rhs.p_data_);
 			swap(this->ptr_contr_block_, rhs.ptr_contr_block_);
@@ -181,6 +186,8 @@ namespace rt_soft_autumn_school
 
 		element_type* p_data_ = { nullptr };
 		ref_count<T>* ptr_contr_block_ = { nullptr };
+
+		mutable std::mutex sync_;
 	};
 
 }

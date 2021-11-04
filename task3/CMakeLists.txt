@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
+set (CMAKE_CXX_STANDARD 20)
+ 
 set(SHARED_PTR_PROJECT_NAME RtSoft_Simple_shared_pointer)
 project(${SHARED_PTR_PROJECT_NAME})
 
