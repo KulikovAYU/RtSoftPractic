@@ -1,6 +1,9 @@
+#include <iostream>
+#include <memory>
+#include <vector>
+
 namespace rt_soft_autumn_school
 {
-
 	//1. Реализовать структуру данных :
 	//-обычный односвязный список(с указателем на голову)
 	//	- чтобы была leek free(со smart ptr) и шаблонной
@@ -19,6 +22,10 @@ namespace rt_soft_autumn_school
 
     class LinkedListBuilder;
 
+	template<typename Val>
+	class DeepCloneStrat;
+
+
     template<typename Val>
     struct Node
     {
@@ -29,28 +36,24 @@ namespace rt_soft_autumn_school
         SoftPointer<Val> m_pRand_node_ = { nullptr };
     };
 
-    
-	template<typename Val>
-    struct DeepCloneStrat;
-
-    template<typename Val, typename CopyStrat = DeepCloneStrat<Val>>
+    template<typename Val>
     class LeakFreeList
     {
      
     public:
 
-        std::unique_ptr<LeakFreeList<Val>> clone() {
-            return CopyStrat().clone(this);
+        //static polyrphism is better than dynamic
+        //so i used that pattern
+        template<typename CopyStrat>
+        std::unique_ptr<LeakFreeList<Val>> clone(CopyStrat copier) {
+            return copier.clone(this);
         }
 
-
 		template <typename T>
-		void AddNode(T&& val)
-		{
+		void AddNode(T&& val){
 			HardPointer<Val> new_node = std::make_unique<Node<Val>>(std::forward<T>(val));
 
-			if (!this->m_pHead_)
-			{
+			if (!this->m_pHead_){
 				this->m_pHead_ = std::move(new_node);
                 m_pTail_ = m_pHead_.get();
 				return;
@@ -60,13 +63,18 @@ namespace rt_soft_autumn_school
             m_pTail_ = m_pTail_->m_pNext_.get();
 		}
 
-        SoftPointer<Val> GetHead() const {
+        SoftPointer<Val> GetHead() const noexcept {
             return m_pHead_.get();
+		}
+
+
+		SoftPointer<Val> GetTail() const noexcept {
+			return m_pTail_;
 		}
 
     private:
         friend class LinkedListBuilder;
-        friend struct DeepCloneStrat<Val>;
+        friend class DeepCloneStrat<Val>;
 
         HardPointer<Val> m_pHead_ = { nullptr };
         SoftPointer<Val> m_pTail_ = { nullptr };
@@ -75,8 +83,9 @@ namespace rt_soft_autumn_school
 
 
     template<typename Val>
-    struct DeepCloneStrat
+    class DeepCloneStrat
     {
+    public:
         std::unique_ptr<LeakFreeList<Val>> clone(LeakFreeList<Val>* pList)
         {
 			//make clone all nodes and make hard links
@@ -89,8 +98,7 @@ namespace rt_soft_autumn_school
             std::unique_ptr<LeakFreeList<Val>> p_new_list = std::make_unique<LeakFreeList<Val>>();
             CloneNodesWithHardPointers(p_new_list, pList);
             ConnectSoftPointers(p_new_list, pList);
-           
-            
+
             return p_new_list;
         }
 
@@ -127,7 +135,6 @@ namespace rt_soft_autumn_school
                 p_src_curr = p_src_curr->m_pNext_.get();
                 p_dest_curr = p_dest_curr->m_pNext_.get();
             }
-
         }
 
 
@@ -149,8 +156,6 @@ namespace rt_soft_autumn_school
     };
 
 
-
-   
     class LinkedListBuilder
     {
     public:
@@ -191,17 +196,43 @@ namespace rt_soft_autumn_school
         }
     };
 
-    template<typename Val>
-    void PrintList(LeakFreeList<Val>* pSrcList)
-    {
+
+	template<typename Val, typename Callback>
+	void TraverseList(LeakFreeList<Val>* pSrcList, const Callback& pCb)
+	{
 		auto pCurr = pSrcList->GetHead();
 
 		while (pCurr)
 		{
-			std::cout <<"Hard node = "<<pCurr->m_data_ << std::endl;
-            std::cout <<"Soft node = "<<pCurr->m_pRand_node_->m_data_ << std::endl;
-
+            pCb(pCurr);
 			pCurr = pCurr->m_pNext_.get();
 		}
+	}
+
+	template<typename Val>
+	void GoToTheEndList(LeakFreeList<Val>* pSrcList)
+	{
+        TraverseList(pSrcList, [](Node<Val>* pCurr) {});
+	}
+
+
+    template<typename Val>
+    void PrintList(LeakFreeList<Val>* pSrcList)
+    {
+        auto printFunc = [](Node<Val>* pCurr) {
+            std::cout << "Hard node = " << pCurr->m_data_ << std::endl;
+            std::cout << "Soft node = " << pCurr->m_pRand_node_->m_data_ << std::endl; };
+
+		TraverseList(pSrcList, printFunc);
     }
+
+
+	template<typename Val>
+	size_t GetLenght(LeakFreeList<Val>* pSrcList)
+	{
+        size_t counter = 0;
+        TraverseList(pSrcList, [&counter](Node<Val>* pCurr) { ++counter; });
+
+        return counter;
+	}
 }

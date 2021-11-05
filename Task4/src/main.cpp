@@ -1,24 +1,15 @@
 int main()
 {
-   auto pList = rt_soft_autumn_school::LinkedListBuilder::MakeList();
-   
-   std::cout << "Src list"<< std::endl;
-   PrintList(pList.get());
+	/*auto pList = rt_soft_autumn_school::LinkedListBuilder::MakeList();
 
-   auto pNewList = pList->clone();
+	std::cout << "Src list" << std::endl;
+	PrintList(pList.get());
 
-   std::cout << "Dest list" << std::endl;
-   PrintList(pNewList.get());
+	auto pNewList = pList->clone(rt_soft_autumn_school::DeepCloneStrat<size_t>());
 
-  /* auto pCurr = pList->GetHead();
+	std::cout << "Dest list" << std::endl;
+	PrintList(pNewList.get());*/
 
-   while (pCurr)
-   {
-       std::cout << pCurr->m_data_ << std::endl;
-
-       pCurr =  pCurr->m_pNext_.get();
-   }*/
-
-    system("pause");
+    //system("pause");
     return 0;
 }
