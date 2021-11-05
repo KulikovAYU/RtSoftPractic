@@ -12,7 +12,7 @@ namespace rt_soft_autumn_school
 	class shared_ptr;
 
 
-	//simle ref counter (control block)
+	//simple ref counter (control block)
 	//with thread safe counter
 	template<typename T>
 	struct ref_count
@@ -96,11 +96,11 @@ namespace rt_soft_autumn_school
 			return *this;
 		}
 
-		shared_ptr& operator=(shared_ptr&& rhs) noexcept { //take recourse from rhs
+		shared_ptr& operator=(shared_ptr&& rhs) noexcept { //take resourse from rhs
 			if (this == &rhs)
 				return *this;
 
-			//let's make prvalue, because rhs - is lvalue
+			//let's make xvalue, because rhs - is lvalue
 			shared_ptr(std::move(rhs)).swap(*this);
 
 			return *this;
