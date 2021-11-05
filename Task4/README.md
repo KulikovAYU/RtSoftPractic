@@ -1,4 +1,4 @@
-explanatory_diagram.png ?raw=true "Исходная схема организации списка"
+![task4](explanatory_diagram.png?raw=true "Исходная схема организации списка")
 
 Задание день 2.
 
