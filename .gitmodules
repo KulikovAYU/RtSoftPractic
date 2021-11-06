@@ -4,3 +4,6 @@
 [submodule "RtSoftAutumnSchool_21/Task1/vendors/googletest"]
 	path = RtSoftAutumnSchool_21/Task1/vendors/googletest
 	url = https://github.com/google/googletest.git
+[submodule "RtSoftAutumnSchool_21/Task3/vendors/googletest"]
+	path = RtSoftAutumnSchool_21/Task3/vendors/googletest
+	url = https://github.com/google/googletest.git
