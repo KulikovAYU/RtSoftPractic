@@ -1,12 +1,11 @@
 #include <gtest/gtest.h>
-#include <sml.hpp>
-#include "StateMachine.hpp"
+#include <StateMachine.hpp>
 
 using namespace rt_soft_autumn_school;
 using namespace boost::sml;
 
 //state coverage
-TEST(StateCoverage, StateMachineTestByTransitionTree_Test1)
+TEST(StateCoverage, StateMachineStages_Test)
 {
 	BoostStateMachine deviceSm;
 
