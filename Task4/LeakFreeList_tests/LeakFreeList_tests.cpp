@@ -4,6 +4,45 @@
 
 using namespace rt_soft_autumn_school;
 
+class LinkedListBuilder
+{
+public:
+
+	static std::unique_ptr<LeakFreeList<size_t>> MakeList()
+	{
+		std::unique_ptr<LeakFreeList<size_t>> ptrList = std::make_unique<LeakFreeList<size_t>>();
+
+		ptrList->AddNode(0);
+		ptrList->AddNode(1);
+		ptrList->AddNode(2);
+		ptrList->AddNode(3);
+		ptrList->AddNode(4);
+
+		MixList(ptrList);
+		return ptrList;
+	}
+
+private:
+	static void MixList(std::unique_ptr<LeakFreeList<size_t>>& pList)
+	{
+		auto pHead = pList->GetHead();
+
+		//0
+		pHead->m_pRand_node_ = pHead->m_pNext_.get();
+
+		//1
+		pHead->m_pNext_->m_pRand_node_ = pHead;
+
+		//2
+		pHead->m_pNext_->m_pNext_->m_pRand_node_ = pHead;
+
+		//3
+		pHead->m_pNext_->m_pNext_->m_pNext_->m_pRand_node_ = pHead->m_pNext_->m_pNext_.get();
+
+		//4
+		pHead->m_pNext_->m_pNext_->m_pNext_->m_pNext_->m_pRand_node_ = pHead;
+	}
+};
 
 TEST(SimpleSharedPtrTest, CheckListsLenght)
 {
