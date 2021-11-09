@@ -41,8 +41,8 @@ namespace rt_soft_autumn_school
 		//static polyrphism is better than dynamic
 		//so i used that pattern
 		template<typename CopyStrat>
-		std::unique_ptr<LeakFreeList<Val>> clone(CopyStrat copier) {
-			return copier.clone(this);
+		std::unique_ptr<LeakFreeList<Val>> Clone(CopyStrat copier) {
+			return copier.Clone(this);
 		}
 
 		template <typename T>
@@ -79,8 +79,7 @@ namespace rt_soft_autumn_school
 	class DeepCloneStrat
 	{
 	public:
-		std::unique_ptr<LeakFreeList<Val>> clone(LeakFreeList<Val>* pList)
-		{
+		std::unique_ptr<LeakFreeList<Val>> Clone(LeakFreeList<Val>* pList) {
 			//make clone all nodes and make hard links
 			//create a vector of pointers to the source tree nodes
 			//create a vector of pointers to the copy tree nodes
@@ -96,8 +95,7 @@ namespace rt_soft_autumn_school
 		}
 
 	private:
-		void CloneNodesWithHardPointers(std::unique_ptr<LeakFreeList<Val>>& destList, LeakFreeList<Val>* pSrcList)
-		{
+		void CloneNodesWithHardPointers(std::unique_ptr<LeakFreeList<Val>>& destList, LeakFreeList<Val>* pSrcList) {
 			//clones only hard links and fill vectors
 			TraverseList(pSrcList, [this, &destList](SoftPointer<Val> pCurr) {
 				m_src_list_.emplace_back(pCurr);
@@ -106,8 +104,7 @@ namespace rt_soft_autumn_school
 
 		}
 
-		void ConnectSoftPointers(std::unique_ptr<LeakFreeList<Val>>& destList, LeakFreeList<Val>* pSrcList)
-		{
+		void ConnectSoftPointers(std::unique_ptr<LeakFreeList<Val>>& destList, LeakFreeList<Val>* pSrcList) {
 			auto p_src_curr = pSrcList->GetHead();
 			auto p_dest_curr = destList->GetHead();
 
@@ -129,8 +126,7 @@ namespace rt_soft_autumn_school
 		}
 
 
-		bool GetIndex(const std::vector<SoftPointer<Val>>& src_list, const SoftPointer<Val>& req_pointer, size_t& out_index)
-		{
+		bool GetIndex(const std::vector<SoftPointer<Val>>& src_list, const SoftPointer<Val>& req_pointer, size_t& out_index) {
 			auto it = std::find(src_list.cbegin(), src_list.cend(), req_pointer);
 			if (it != src_list.cend())
 			{
@@ -147,8 +143,7 @@ namespace rt_soft_autumn_school
 	};
 
 	template<typename Val, typename Callback>
-	void TraverseList(LeakFreeList<Val>* pSrcList, const Callback& pCb)
-	{
+	void TraverseList(LeakFreeList<Val>* pSrcList, const Callback& pCb) {
 		auto pCurr = pSrcList->GetHead();
 
 		while (pCurr)
@@ -159,14 +154,12 @@ namespace rt_soft_autumn_school
 	}
 
 	template<typename Val>
-	void GoToTheEndList(LeakFreeList<Val>* pSrcList)
-	{
+	void GoToTheEndList(LeakFreeList<Val>* pSrcList) {
 		TraverseList(pSrcList, [](const SoftPointer<Val>& pCurr) {});
 	}
 
 	template<typename Val>
-	void PrintList(LeakFreeList<Val>* pSrcList)
-	{
+	void PrintList(LeakFreeList<Val>* pSrcList){
 		auto printFunc = [](const SoftPointer<Val>& pCurr) {
 			std::cout << "Hard node = " << pCurr->m_data_ << std::endl;
 			std::cout << "Soft node = " << pCurr->m_pRand_node_->m_data_ << std::endl; };
@@ -175,8 +168,7 @@ namespace rt_soft_autumn_school
 	}
 
 	template<typename Val>
-	size_t GetLenght(LeakFreeList<Val>* pSrcList)
-	{
+	size_t GetLenght(LeakFreeList<Val>* pSrcList){
 		size_t counter = 0;
 		TraverseList(pSrcList, [&counter](const SoftPointer<Val>& pCurr) { ++counter; });
 

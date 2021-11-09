@@ -48,7 +48,7 @@ TEST(SimpleSharedPtrTest, CheckListsLenght)
 {
 	auto pSrcList = LinkedListBuilder::MakeList();
 
-	auto pClonedList = pSrcList->clone(DeepCloneStrat<size_t>());
+	auto pClonedList = pSrcList->Clone(DeepCloneStrat<size_t>());
 
 
 	size_t nSrcListLenght = GetLenght(pSrcList.get());
@@ -61,7 +61,7 @@ TEST(SimpleSharedPtrTest, TailDataIs4)
 {
 	auto pSrcList = LinkedListBuilder::MakeList();
 
-	auto pClonedList = pSrcList->clone(DeepCloneStrat<size_t>());
+	auto pClonedList = pSrcList->Clone(DeepCloneStrat<size_t>());
 
 
 	GoToTheEndList(pSrcList.get());
@@ -76,7 +76,7 @@ TEST(SimpleSharedPtrTest, NextOfLastNodesBoothNullptr)
 {
 	auto pSrcList = LinkedListBuilder::MakeList();
 
-	auto pClonedList = pSrcList->clone(DeepCloneStrat<size_t>());
+	auto pClonedList = pSrcList->Clone(DeepCloneStrat<size_t>());
 
 
 	GoToTheEndList(pSrcList.get());
@@ -92,7 +92,7 @@ TEST(SimpleSharedPtrTest, CheckFullEqualsList)
 {
 	auto pSrcList = LinkedListBuilder::MakeList();
 	
-	auto pClonedList = pSrcList->clone(DeepCloneStrat<size_t>());
+	auto pClonedList = pSrcList->Clone(DeepCloneStrat<size_t>());
 
 	auto pCurrSrcList = pSrcList->GetHead();
 	auto pCurrClonedList = pClonedList->GetHead();
