@@ -69,8 +69,6 @@ namespace rt_soft_autumn_school
 		}
 
 	private:
-		friend class DeepCloneStrat<Val>;
-
 		HardPointer<Val> m_pHead_ = { nullptr };
 		SoftPointer<Val> m_pTail_ = { nullptr };
 	};
@@ -104,7 +102,7 @@ namespace rt_soft_autumn_school
 			TraverseList(pSrcList, [this, &destList](SoftPointer<Val> pCurr) {
 				m_src_list_.emplace_back(pCurr);
 				destList->AddNode(pCurr->m_data_);
-				m_dest_list_.emplace_back(destList->m_pTail_); });
+				m_dest_list_.emplace_back(destList->GetTail()); });
 
 		}
 
@@ -163,13 +161,13 @@ namespace rt_soft_autumn_school
 	template<typename Val>
 	void GoToTheEndList(LeakFreeList<Val>* pSrcList)
 	{
-		TraverseList(pSrcList, [](Node<Val>* pCurr) {});
+		TraverseList(pSrcList, [](const SoftPointer<Val>& pCurr) {});
 	}
 
 	template<typename Val>
 	void PrintList(LeakFreeList<Val>* pSrcList)
 	{
-		auto printFunc = [](Node<Val>* pCurr) {
+		auto printFunc = [](const SoftPointer<Val>& pCurr) {
 			std::cout << "Hard node = " << pCurr->m_data_ << std::endl;
 			std::cout << "Soft node = " << pCurr->m_pRand_node_->m_data_ << std::endl; };
 
@@ -180,7 +178,7 @@ namespace rt_soft_autumn_school
 	size_t GetLenght(LeakFreeList<Val>* pSrcList)
 	{
 		size_t counter = 0;
-		TraverseList(pSrcList, [&counter](Node<Val>* pCurr) { ++counter; });
+		TraverseList(pSrcList, [&counter](const SoftPointer<Val>& pCurr) { ++counter; });
 
 		return counter;
 	}
