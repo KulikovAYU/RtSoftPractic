@@ -57,8 +57,10 @@ namespace rt_soft_autumn_school {
 			std::unique_lock<std::mutex> lock(m_isBusy);
 
 			//if buffer is full we erase last item
-			if (IsFull())
+			if (IsFull()) {
+				m_pWritePtr->~T();
 				m_pWritePtr = MoveLeft(m_pWritePtr);
+			}
 
 			//invoke placement new (constructor) and forward args
 			new(m_pWritePtr)T{ std::forward<Args>(args)... };
@@ -74,8 +76,11 @@ namespace rt_soft_autumn_school {
 			std::unique_lock<std::mutex> lock(m_isBusy);
 
 			//if buffer is full we erase last item
-			if (IsFull())
+			if (IsFull()) {
+				m_pWritePtr->~T();
 				m_pWritePtr = MoveLeft(m_pWritePtr);
+			}
+				
 
 			//invoke placement new and try to move entt
 			new(m_pWritePtr)T{ std::move(item) };
