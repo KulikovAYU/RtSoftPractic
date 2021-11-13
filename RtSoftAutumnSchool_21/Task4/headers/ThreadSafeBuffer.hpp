@@ -67,7 +67,7 @@ namespace rt_soft_autumn_school {
 
 			m_pWritePtr = MoveRight(m_pWritePtr);
 
-			n_notEmpty.notify_all();
+			m_notEmpty.notify_all();
 		}
 
 
@@ -87,7 +87,7 @@ namespace rt_soft_autumn_school {
 
 			m_pWritePtr = MoveRight(m_pWritePtr);
 
-			n_notEmpty.notify_all();
+			m_notEmpty.notify_all();
 		}
 
 
@@ -100,6 +100,7 @@ namespace rt_soft_autumn_school {
 			{
 				m_pWritePtr->~T();
 				m_pWritePtr = nullptr;
+				m_notEmpty.notify_all();
 				return;
 			}
 
@@ -108,7 +109,7 @@ namespace rt_soft_autumn_school {
 			DataTypePtr previousItm = MoveLeft(m_pWritePtr);
 			previousItm->~T();
 			m_pWritePtr = previousItm;
-			n_notEmpty.notify_all();
+			m_notEmpty.notify_all();
 		}
 
 
@@ -124,7 +125,7 @@ namespace rt_soft_autumn_school {
 			//and 2-nd thread takes that item before 1-st thread takes it.
 			//If its case happens 1-st thread takes item from same data and can change it
 			while (IsEmpty())
-				n_notEmpty.wait(lock); //sleep
+				m_notEmpty.wait(lock); //sleep
 
 			return TakeLocked();
 		}
@@ -248,7 +249,7 @@ namespace rt_soft_autumn_school {
 		DataTypePtr m_pReadPtr = { nullptr };
 		DataTypePtr m_pWritePtr = { nullptr };
 
-		std::condition_variable n_notEmpty; //guarded by mutex
+		std::condition_variable m_notEmpty; //guarded by mutex
 		mutable std::mutex m_isBusy;
 	};
 }
