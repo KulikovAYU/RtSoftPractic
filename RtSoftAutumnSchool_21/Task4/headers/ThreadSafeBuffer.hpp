@@ -192,29 +192,28 @@ namespace rt_soft_autumn_school {
 
 			//allocate new chunk of memory
 			DataTypePtr pNewBuffer = reinterpret_cast<DataTypePtr>(new(std::nothrow) char[countOfCopyObjs * sizeof(T)]);
+			ptrdiff_t distance = 0;
 
-			//check if we copy empty rhs
-			if (rhs.IsEmpty())
-				return;
+			if (!rhs.IsEmpty())
+			{
+				//set pointer on begin other block
+				DataTypePtr pStartRhsBuffer = reinterpret_cast<DataTypePtr>(rhs.m_pBuffer);
 
-			//set pointer on begin other block
-			DataTypePtr pStartRhsBuffer = reinterpret_cast<DataTypePtr>(rhs.m_pBuffer);
+				//let's calculate distance between blocks
+				distance = rhs.m_pWritePtr - pStartRhsBuffer;
 
-			//let's calculate distance between blocks
-			ptrdiff_t distance = rhs.m_pWritePtr - pStartRhsBuffer;
+				int bufDistance = static_cast<int>(distance);
+				for (SizeType i = 0; i < countOfCopyObjs && bufDistance > 0; ++i) {
+					//invoke placement new and copy constructor
+					new(pNewBuffer + i)T(*pStartRhsBuffer);
+					pStartRhsBuffer++;
+					--bufDistance;
+				}
 
-			int bufDistance = static_cast<int>(distance);
-			for (SizeType i = 0; i < countOfCopyObjs && bufDistance > 0; ++i) {
-				//invoke placement new and copy constructor
-				new(pNewBuffer + i)T(*pStartRhsBuffer);
-				pStartRhsBuffer++;
-				--bufDistance;
+				SizeType elements = static_cast<SizeType>(distance);
+				for (SizeType i = 0; i < elements; ++i)
+					(m_pBuffer + i)->~T();
 			}
-
-			SizeType elements = static_cast<SizeType>(distance);
-			for (SizeType i = 0; i < elements; ++i)
-				(m_pBuffer + i)->~T();
-
 
 			delete[] reinterpret_cast<char*>(m_pBuffer);
 			m_pBuffer = pNewBuffer;
