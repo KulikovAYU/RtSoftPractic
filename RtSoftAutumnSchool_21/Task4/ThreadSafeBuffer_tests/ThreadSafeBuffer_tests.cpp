@@ -8,32 +8,10 @@ using namespace rt_soft_autumn_school;
 struct StubObject {
 
 	StubObject(size_t x_) : x{ x_ }
-	{
-
-	}
-	StubObject(const StubObject& rhs) : x{ rhs.x }
-	{
-		int x = 1;
-	}
+	{}
+	
 	size_t x = 0;
 };
-
-//int main() {
-//	
-//	CircularThreadSafeBuffer<Test, 1> buffer;
-//	buffer.Enqueue(Test());
-//
-//	CircularThreadSafeBuffer<Test, 1> buffer1(buffer);
-//	CircularThreadSafeBuffer<Test, 1> buffer3(std::move(buffer1));
-//
-//
-//	buffer.Emplace(10);
-//
-//	buffer.Dequeue();
-//	buffer.Dequeue();
-//	buffer.Get();
-//}
-
 
 TEST(SingleThread, Enqueue_single_test)
 {
@@ -74,58 +52,99 @@ TEST(SingleThread, Enqueue_move_construct_test)
 	CircularThreadSafeBuffer<StubObject, 1> srcBuffer;
 	srcBuffer.Enqueue(StubObject{ 1000 });
 
-	CircularThreadSafeBuffer<StubObject, 1> destBuffer(std::move(srcBuffer));
-	destBuffer.Enqueue(StubObject{ 0 });
+	CircularThreadSafeBuffer<StubObject, 1> destBuffer;
+	destBuffer.Enqueue(StubObject{ 100 });
+
+	srcBuffer = std::move(destBuffer);
+	
 
 	EXPECT_TRUE(destBuffer.Get().x == 1000);
-	EXPECT_TRUE(srcBuffer.Get().x == 0);
+	EXPECT_TRUE(srcBuffer.Get().x == 100);
 }
 
 
-#if 0
-//state coverage
-TEST(StateCoverage, StateMachineStages_Test)
+TEST(SingleThread, Dequeue_test)
 {
-	BoostStateMachine deviceSm;
+	constexpr size_t MAX_SIZE = 1000;
+	CircularThreadSafeBuffer<StubObject, MAX_SIZE> srcBuffer;
 
-	deviceSm.process_event(StateMachine::EventOn{});
-	EXPECT_TRUE(deviceSm.is("Starting"_s));
+	for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+		srcBuffer.Emplace(i);
 
-	deviceSm.process_event(StateMachine::EventReady{});
-	EXPECT_TRUE(deviceSm.is("Running"_s));
 
-	deviceSm.process_event(StateMachine::EventWarning{});
-	EXPECT_TRUE(deviceSm.is("Error"_s));
+	for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+		srcBuffer.Dequeue();
 
-	deviceSm.process_event(StateMachine::EventHitByHammer{});
-	EXPECT_TRUE(deviceSm.is("Running"_s));
-
-	deviceSm.process_event(StateMachine::EventOff{});
-	EXPECT_TRUE(deviceSm.is("Stoped"_s));
+	SUCCEED();
 }
 
 
-//transition coverage
-TEST(TransitionCoverage, StateMachineTestByTransitionTree_Test1)
+
+//Deadlock Test
+TEST(Concurrency, ReadWriteDeadlock_test)
 {
-	BoostStateMachine deviceSm;
-	deviceSm.process_event(StateMachine::EventOn{});
-	deviceSm.process_event(StateMachine::EventReady{});
-	deviceSm.process_event(StateMachine::EventOff{});
 
-	bool bIsStopped = deviceSm.is("Stoped"_s);
-	EXPECT_TRUE(bIsStopped);
+	constexpr size_t MAX_SIZE = 1000;
+	CircularThreadSafeBuffer<StubObject, MAX_SIZE> srcBuffer;
+
+	std::thread reader([MAX_SIZE, &srcBuffer]() {
+
+		for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+		{
+			const auto& item = srcBuffer.Get();
+			std::this_thread::sleep_for(std::chrono::milliseconds(3));
+		}
+
+		});
+
+	std::thread writer([MAX_SIZE, &srcBuffer]() {
+		for (size_t i = 0 ; i < MAX_SIZE - 1; ++i)
+		{
+			srcBuffer.Emplace(i);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+		});
+
+	reader.join();
+	writer.join();
+
+	SUCCEED();
 }
 
-TEST(TransitionCoverage, StateMachineTestByTransitionTree_Test2)
+
+TEST(Concurrency, Sleap_test)
 {
-	BoostStateMachine deviceSm;
-	deviceSm.process_event(StateMachine::EventOn{});
-	deviceSm.process_event(StateMachine::EventReady{});
-	deviceSm.process_event(StateMachine::EventWarning{});
-	deviceSm.process_event(StateMachine::EventHitByHammer{});
-	deviceSm.process_event(StateMachine::EventOff{});
+	constexpr size_t MAX_SIZE = 1000;
+	CircularThreadSafeBuffer<StubObject, MAX_SIZE> srcBuffer;
 
-	EXPECT_TRUE(deviceSm.is("Stoped"_s));
+	for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+		srcBuffer.Emplace(i);
+
+
+	std::atomic<bool> bIsStoppedWrite = false;
+
+	std::thread reader([&]() {
+
+		while (!bIsStoppedWrite)
+			const auto& item = srcBuffer.Get();
+		});
+
+	std::thread dequer([&]() {
+		for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+		{
+			srcBuffer.Dequeue();
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+		bIsStoppedWrite = true;
+
+		//wake reader from pushing object (posion pill) for finishing test
+		srcBuffer.Enqueue(StubObject{ 1 });
+		});
+
+	reader.join();
+	dequer.join();
+
+	SUCCEED();
 }
-#endif

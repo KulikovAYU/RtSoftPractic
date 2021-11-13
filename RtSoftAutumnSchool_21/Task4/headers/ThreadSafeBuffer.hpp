@@ -26,11 +26,26 @@ namespace rt_soft_autumn_school {
 		}
 
 		CircularThreadSafeBuffer(const CircularThreadSafeBuffer& rhs) noexcept {
+			
 			this->CopyConstructFrom(rhs);
 		}
 
 		CircularThreadSafeBuffer(CircularThreadSafeBuffer&& rhs) noexcept {
+		
 			this->MoveConstructFrom(std::move(rhs));
+		}
+
+		CircularThreadSafeBuffer& operator =(const CircularThreadSafeBuffer& rhs) noexcept {
+
+			this->CopyConstructFrom(rhs);
+			return *this;
+		}
+
+
+		CircularThreadSafeBuffer& operator =(CircularThreadSafeBuffer&& rhs) noexcept {
+
+			this->MoveConstructFrom(std::move(rhs));
+			return *this;
 		}
 
 		constexpr SizeType GetMaxSize() const noexcept { return sizeof(T) * MaxSize; }
@@ -43,12 +58,12 @@ namespace rt_soft_autumn_school {
 
 			//if buffer is full we erase last item
 			if (IsFull())
-				MoveLeft(m_pWritePtr);
+				m_pWritePtr = MoveLeft(m_pWritePtr);
 
 			//invoke placement new (constructor) and forward args
 			new(m_pWritePtr)T{ std::forward<Args>(args)... };
 
-			MoveRight(m_pWritePtr);
+			m_pWritePtr = MoveRight(m_pWritePtr);
 
 			n_notEmpty.notify_all();
 		}
@@ -76,9 +91,10 @@ namespace rt_soft_autumn_school {
 
 			std::unique_lock<std::mutex> lock(m_isBusy);
 
-			if (IsEmpty())
+			if (IsEmpty() && m_pWritePtr)
 			{
 				m_pWritePtr->~T();
+				m_pWritePtr = nullptr;
 				return;
 			}
 
@@ -87,6 +103,7 @@ namespace rt_soft_autumn_school {
 			DataTypePtr previousItm = MoveLeft(m_pWritePtr);
 			previousItm->~T();
 			m_pWritePtr = previousItm;
+			n_notEmpty.notify_all();
 		}
 
 
@@ -188,10 +205,11 @@ namespace rt_soft_autumn_school {
 				pStartRhsBuffer++;
 				--bufDistance;
 			}
-			for (SizeType i = 0; i < distance; ++i)
-			{
-				(reinterpret_cast<DataTypePtr>(m_pBuffer) + i)->~T();
-			}
+
+			SizeType elements = static_cast<SizeType>(distance);
+			for (SizeType i = 0; i < elements; ++i)
+				(m_pBuffer + i)->~T();
+
 
 			delete[] reinterpret_cast<char*>(m_pBuffer);
 			m_pBuffer = pNewBuffer;
@@ -205,6 +223,12 @@ namespace rt_soft_autumn_school {
 			static_assert(std::is_same_v<T, T2>, "Type of the buffer can not be difference");
 			static_assert(MaxSize == MaxSize2, "Size of buffers are not equals");
 
+			this->Swap(rhs);
+		}
+
+
+		void Swap(CircularThreadSafeBuffer& rhs) noexcept {
+
 			std::scoped_lock guard_(m_isBusy, rhs.m_isBusy);
 
 			using std::swap;
@@ -213,7 +237,6 @@ namespace rt_soft_autumn_school {
 			swap(m_pReadPtr, rhs.m_pReadPtr);
 			swap(m_pWritePtr, rhs.m_pWritePtr);
 		}
-
 
 		T* m_pBuffer = { nullptr };
 
