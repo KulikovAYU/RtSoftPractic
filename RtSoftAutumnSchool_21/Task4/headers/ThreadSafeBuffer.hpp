@@ -96,10 +96,9 @@ namespace rt_soft_autumn_school {
 
 			std::unique_lock<std::mutex> lock(m_isBusy);
 
-			if (IsEmpty() && m_pWritePtr)
+			if (IsEmpty())
 			{
 				m_pWritePtr->~T();
-				m_pWritePtr = nullptr;
 				m_notEmpty.notify_all();
 				return;
 			}
@@ -138,16 +137,16 @@ namespace rt_soft_autumn_school {
 		}
 
 		bool IsEmpty() const noexcept {
-			return reinterpret_cast<DataTypePtr>(m_pBuffer) == m_pWritePtr;
+			return m_pBuffer == m_pWritePtr;
 		}
 
 		bool PtrInTheEnd(DataTypePtr ptr) const noexcept {
-			return reinterpret_cast<DataTypePtr>(m_pBuffer + GetMaxSize()) == ptr;
+			return (m_pBuffer + GetMaxSize()) == ptr;
 		}
 
 		DataTypePtr MoveLeft(DataTypePtr pSrc, SizeType memCellOffset = 1) const {
 
-			while (pSrc != reinterpret_cast<DataTypePtr>(m_pBuffer) &&
+			while (pSrc != m_pBuffer &&
 				memCellOffset > 0){
 				--pSrc;
 				--memCellOffset;
@@ -158,7 +157,7 @@ namespace rt_soft_autumn_school {
 
 		DataTypePtr MoveRight(DataTypePtr pSrc, SizeType memCellOffset = 1) const {
 
-			while (pSrc != reinterpret_cast<DataTypePtr>(m_pBuffer + GetMaxSize()) &&
+			while (pSrc != (m_pBuffer + GetMaxSize()) &&
 				memCellOffset > 0){
 				++pSrc;
 				--memCellOffset;
@@ -244,7 +243,7 @@ namespace rt_soft_autumn_school {
 			swap(m_pWritePtr, rhs.m_pWritePtr);
 		}
 
-		T* m_pBuffer = { nullptr };
+		DataTypePtr m_pBuffer = { nullptr };
 
 		DataTypePtr m_pReadPtr = { nullptr };
 		DataTypePtr m_pWritePtr = { nullptr };
