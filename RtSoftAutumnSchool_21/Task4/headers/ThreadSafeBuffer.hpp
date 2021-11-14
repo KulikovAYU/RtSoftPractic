@@ -48,7 +48,7 @@ namespace rt_soft_autumn_school {
 			return *this;
 		}
 
-		constexpr SizeType GetMaxSize() const noexcept { return sizeof(T) * MaxSize; }
+		constexpr SizeType GetMaxSize() const noexcept { return sizeof(T) * ( MaxSize + 1); } //reserve 1 to the end ptr
 
 
 		//Construct in place in this circular buffer.
@@ -58,8 +58,9 @@ namespace rt_soft_autumn_school {
 
 			//if buffer is full we erase last item
 			if (IsFull()) {
-				m_pWritePtr->~T();
 				m_pWritePtr = MoveLeft(m_pWritePtr);
+				m_pWritePtr->~T();
+				
 			}
 
 			//invoke placement new (constructor) and forward args
@@ -77,8 +78,9 @@ namespace rt_soft_autumn_school {
 
 			//if buffer is full we erase last item
 			if (IsFull()) {
-				m_pWritePtr->~T();
 				m_pWritePtr = MoveLeft(m_pWritePtr);
+				m_pWritePtr->~T();
+				
 			}
 				
 
@@ -141,7 +143,7 @@ namespace rt_soft_autumn_school {
 		}
 
 		bool PtrInTheEnd(DataTypePtr ptr) const noexcept {
-			return (m_pBuffer + GetMaxSize()) == ptr;
+			return ptr == m_pBuffer + MaxSize;
 		}
 
 		DataTypePtr MoveLeft(DataTypePtr pSrc, SizeType memCellOffset = 1) const {
@@ -157,7 +159,7 @@ namespace rt_soft_autumn_school {
 
 		DataTypePtr MoveRight(DataTypePtr pSrc, SizeType memCellOffset = 1) const {
 
-			while (pSrc != (m_pBuffer + GetMaxSize()) &&
+			while (pSrc != (m_pBuffer + MaxSize + 1) &&
 				memCellOffset > 0){
 				++pSrc;
 				--memCellOffset;
@@ -170,9 +172,14 @@ namespace rt_soft_autumn_school {
 
 			DataTypePtr pBuff = m_pReadPtr;
 
-			if (PtrInTheEnd(++m_pReadPtr))
-				m_pReadPtr = reinterpret_cast<DataTypePtr>(m_pBuffer);
+			if (PtrInTheEnd(m_pReadPtr))
+			{
+				m_pReadPtr = m_pBuffer;
+				pBuff = m_pBuffer;
+			}
 
+			m_pReadPtr = MoveRight(m_pReadPtr);
+			
 			return *pBuff;
 		}
 
@@ -191,13 +198,13 @@ namespace rt_soft_autumn_school {
 				countOfCopyObjs = MaxSize;
 
 			//allocate new chunk of memory
-			DataTypePtr pNewBuffer = reinterpret_cast<DataTypePtr>(new(std::nothrow) char[countOfCopyObjs * sizeof(T)]);
+			DataTypePtr pNewBuffer = reinterpret_cast<DataTypePtr>(new(std::nothrow) char[(countOfCopyObjs + 1) * sizeof(T)]);
 			ptrdiff_t distance = 0;
 
 			if (!rhs.IsEmpty())
 			{
 				//set pointer on begin other block
-				DataTypePtr pStartRhsBuffer = reinterpret_cast<DataTypePtr>(rhs.m_pBuffer);
+				DataTypePtr pStartRhsBuffer = rhs.m_pBuffer;
 
 				//let's calculate distance between blocks
 				distance = rhs.m_pWritePtr - pStartRhsBuffer;

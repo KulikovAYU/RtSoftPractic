@@ -24,17 +24,26 @@ TEST(SingleThread, Enqueue_single_test)
 
 TEST(SingleThread, Enqueue_million_test)
 {
-	static constexpr size_t MAX_SIZE = 1000000;
+	static constexpr size_t MAX_SIZE = 1000001;
 	CircularThreadSafeBuffer<StubObject, MAX_SIZE> buffer;
-	for (size_t i = 0; i < MAX_SIZE - 1; i++) 
-	{
+	for (size_t i = 0; i < MAX_SIZE; i++) 
 		buffer.Enqueue(StubObject(i));
-	}
 
-
-	for (size_t i = 0; i < MAX_SIZE - 1; i++)
+	for (size_t i = 0; i < MAX_SIZE; i++)
 		EXPECT_TRUE(buffer.Get().x == i);
 }
+
+TEST(SingleThread, Enqueue_circle_test)
+{
+	static constexpr size_t MAX_SIZE = 1;
+	CircularThreadSafeBuffer<StubObject, MAX_SIZE> buffer;
+	for (size_t i = 0; i < MAX_SIZE + 1; ++i)
+		buffer.Enqueue(StubObject(i));
+
+	
+	EXPECT_TRUE(buffer.Get().x == 1);
+}
+
 
 TEST(SingleThread, Enqueue_copy_construct_test)
 {
@@ -68,12 +77,36 @@ TEST(SingleThread, Dequeue_test)
 	constexpr size_t MAX_SIZE = 1000;
 	CircularThreadSafeBuffer<StubObject, MAX_SIZE> srcBuffer;
 
-	for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+	for (size_t i = 0; i < MAX_SIZE; ++i)
 		srcBuffer.Emplace(i);
 
 
-	for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+	for (size_t i = 0; i < MAX_SIZE; ++i)
 		srcBuffer.Dequeue();
+
+	SUCCEED();
+}
+
+TEST(SingleThread, CyclingReading_test)
+{
+	constexpr size_t MAX_SIZE = 10;
+	CircularThreadSafeBuffer<StubObject, MAX_SIZE> srcBuffer;
+
+	for (size_t i = 0; i < MAX_SIZE; ++i)
+		srcBuffer.Emplace(i);
+
+	using namespace std::chrono;
+	auto start = high_resolution_clock::now();
+	using namespace std::literals::chrono_literals;
+
+	while (true)
+	{
+		const auto& val = srcBuffer.Get();
+		auto end = high_resolution_clock::now();
+
+		if (duration_cast<seconds>(end - start).count() > 10.0s.count())
+			break;
+	}
 
 	SUCCEED();
 }
