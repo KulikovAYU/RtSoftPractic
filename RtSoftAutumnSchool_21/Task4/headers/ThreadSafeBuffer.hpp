@@ -80,9 +80,7 @@ namespace rt_soft_autumn_school {
 			if (IsFull()) {
 				m_pWritePtr = MoveLeft(m_pWritePtr);
 				m_pWritePtr->~T();
-				
 			}
-				
 
 			//invoke placement new and try to move entt
 			new(m_pWritePtr)T{ std::move(item) };
@@ -98,8 +96,7 @@ namespace rt_soft_autumn_school {
 
 			std::unique_lock<std::mutex> lock(m_isBusy);
 
-			if (IsEmpty())
-			{
+			if (IsEmpty()){
 				m_pWritePtr->~T();
 				m_notEmpty.notify_all();
 				return;
@@ -172,8 +169,7 @@ namespace rt_soft_autumn_school {
 
 			DataTypePtr pBuff = m_pReadPtr;
 
-			if (PtrInTheEnd(m_pReadPtr))
-			{
+			if (PtrInTheEnd(m_pReadPtr)){
 				m_pReadPtr = m_pBuffer;
 				pBuff = m_pBuffer;
 			}

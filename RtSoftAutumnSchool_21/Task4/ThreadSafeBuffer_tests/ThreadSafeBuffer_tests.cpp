@@ -122,7 +122,7 @@ TEST(Concurrency, ReadWriteDeadlock_test)
 
 	std::thread reader([MAX_SIZE, &srcBuffer]() {
 
-		for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+		for (size_t i = 0; i < MAX_SIZE; ++i)
 		{
 			const auto& item = srcBuffer.Get();
 			std::this_thread::sleep_for(std::chrono::milliseconds(3));
@@ -131,7 +131,7 @@ TEST(Concurrency, ReadWriteDeadlock_test)
 		});
 
 	std::thread writer([MAX_SIZE, &srcBuffer]() {
-		for (size_t i = 0 ; i < MAX_SIZE - 1; ++i)
+		for (size_t i = 0 ; i < MAX_SIZE; ++i)
 		{
 			srcBuffer.Emplace(i);
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -150,7 +150,7 @@ TEST(Concurrency, Sleap_test)
 	constexpr size_t MAX_SIZE = 1000;
 	CircularThreadSafeBuffer<StubObject, MAX_SIZE> srcBuffer;
 
-	for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+	for (size_t i = 0; i < MAX_SIZE; ++i)
 		srcBuffer.Emplace(i);
 
 
@@ -163,7 +163,7 @@ TEST(Concurrency, Sleap_test)
 		});
 
 	std::thread dequer([&]() {
-		for (size_t i = 0; i < MAX_SIZE - 1; ++i)
+		for (size_t i = 0; i < MAX_SIZE; ++i)
 		{
 			srcBuffer.Dequeue();
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
