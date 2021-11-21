@@ -19,7 +19,7 @@ int main(){
 
 	//std::deque <std::promise<Gistoghramm>> tasks;
 
-	Timer tmr(10);
+	Timer tmr(15);
 	//std::condition_variable hasMessage;
 	//std::mutex sync;
 
@@ -57,7 +57,7 @@ int main(){
 	auto consumer = std::thread([&]
 		{
 			//Timer selfTmr(10);
-			while (!isFinished)
+			while (true)
 			{
 				if (!buffer.IsEmpty())
 				{
@@ -67,9 +67,25 @@ int main(){
 					//ThreadPool::Instance().GetFutures();
 					//write to file
 					FileWriter::Write(result);
+
+
+					if (isFinished)
+					{
+						while (!buffer.IsEmpty())
+						{
+							auto promise = std::move(buffer.Pop());
+							auto future = promise.get_future();
+							auto result = future.get();
+							//ThreadPool::Instance().GetFutures();
+							//write to file
+							FileWriter::Write(result);
+							
+						}
+						return;
+					}
 				}
 				
-
+				
 			//	selfTmr.Reset(10);
 			}
 			
@@ -78,5 +94,6 @@ int main(){
 	producer.join();
 	consumer.join();
 
+	std::cout << "finished" << std::endl;
 	return 0;
 }
