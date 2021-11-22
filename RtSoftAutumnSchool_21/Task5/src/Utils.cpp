@@ -6,7 +6,8 @@
 
 namespace rt_soft_autumn_school {
 
-	Message GenMessage(){
+	Message GenMessage()
+	{
 		Message msg;
 
 		std::random_device device;

@@ -7,8 +7,8 @@ namespace rt_soft_autumn_school {
 
 	using Task = std::function<void()>;
 
-	class ThreadPool {
-
+	class ThreadPool
+	{
 	public:
 		static ThreadPool& Instance() {
 			static ThreadPool static_thread_pool;

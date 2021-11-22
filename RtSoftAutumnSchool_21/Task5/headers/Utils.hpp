@@ -5,6 +5,7 @@
 
 
 namespace rt_soft_autumn_school {
+
 	class BarChart;
 
 

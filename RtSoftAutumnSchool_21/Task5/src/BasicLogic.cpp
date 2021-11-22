@@ -67,5 +67,4 @@ namespace rt_soft_autumn_school {
 
 		std::cout << "BarChart writing was finished" << std::endl;
 	}
-
 }

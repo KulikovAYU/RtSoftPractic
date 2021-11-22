@@ -10,8 +10,6 @@ namespace rt_soft_autumn_school {
 	class BarChart {
 
 	public:
-		size_t& operator[](size_t cell);
-		const size_t& operator[](size_t cell) const;
 		void FromMessage(const Message& msg);
 
 		friend std::wofstream& operator<< (std::wofstream& out, const BarChart& gist);

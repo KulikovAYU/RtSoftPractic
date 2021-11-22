@@ -21,9 +21,10 @@ namespace rt_soft_autumn_school {
 	};
 
 
-	class Application {
+	class Application 
+	{
 	public:
-		Application(const std::string& name = "Gistogramm App", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
+		Application(const std::string& name = "BarChart App", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
 
 		void Run();
 

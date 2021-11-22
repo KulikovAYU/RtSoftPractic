@@ -3,7 +3,7 @@
 
 namespace rt_soft_autumn_school {
 
-	Application::Application(const std::string& name /*= "Gistogramm App"*/, ApplicationCommandLineArgs args /*= ApplicationCommandLineArgs()*/)
+	Application::Application(const std::string& name /*= "BarChart App"*/, ApplicationCommandLineArgs args /*= ApplicationCommandLineArgs()*/)
 	{}
 
 	void Application::Run()
@@ -16,6 +16,6 @@ namespace rt_soft_autumn_school {
 
 	std::unique_ptr<Application> CreateApplication(ApplicationCommandLineArgs args)
 	{
-		return std::make_unique<Application>("Gistogramm App", args);
+		return std::make_unique<Application>("BarChart App", args);
 	}
 }

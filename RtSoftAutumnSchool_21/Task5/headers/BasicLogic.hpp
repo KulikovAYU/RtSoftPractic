@@ -2,7 +2,7 @@
 
 namespace rt_soft_autumn_school {
 
-	class BasicLogic {
+	class BasicLogic final {
 	
 	public:
 		void Run();
