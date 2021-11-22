@@ -6,11 +6,11 @@ namespace rt_soft_autumn_school {
 
 	struct Message
 	{
-		const uint8_t& operator[](size_t n) const {
+		const uint8_t& operator[](size_t n) const noexcept {
 			return m_measurements[n];
 		}
 
-		uint8_t& operator[](size_t n) {
+		uint8_t& operator[](size_t n) noexcept {
 			return const_cast<uint8_t&>(static_cast<const Message&>(*this)[n]);
 		}
 

@@ -16,12 +16,9 @@ namespace rt_soft_autumn_school {
 		}
 
 		template<typename MyTask, typename...Args>
-		static auto Spawn(MyTask&& tsk, Args&&... args)-> std::future<decltype(tsk(args...))> {
+		auto Spawn(MyTask&& tsk, Args&&... args)-> std::future<decltype(tsk(args...))> {
 			
 			//this idea takes from: https://github.com/mtrebi/thread-pool/blob/master/README.md
-
-			auto& tp = Instance();
-
 			// Create a function with bounded
 			//parameters ready to execute
 			std::function<decltype(tsk(args...))()> func = std::bind(std::forward<MyTask>(tsk), std::forward<Args>(args)...);
@@ -32,6 +29,8 @@ namespace rt_soft_autumn_school {
 
 			// Wrap packaged task into void function
 			std::function<void()> wrapperFunc = [taskPtr]() {(*taskPtr)(); };
+
+			auto& tp = Instance();
 
 			// Enqueue generic wrapper function
 			tp.m_tasksQueue.put(wrapperFunc);

@@ -35,8 +35,8 @@ namespace rt_soft_autumn_school {
 					//gen message
 					auto msg = GenMessage();
 
-					auto callback = [&msg]() { BarChart gst; gst.FromMessage(msg); return gst; };
-					auto future = ThreadPool::Instance().Spawn(callback);
+					auto task = [&msg]() { BarChart gst; gst.FromMessage(msg); return gst; };
+					auto future = ThreadPool::Instance().Spawn(task);
 					threadSafeBuffer.Push(future.get());
 				}
 
