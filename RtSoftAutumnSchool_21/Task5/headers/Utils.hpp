@@ -1,25 +1,37 @@
 #pragma once
-#include <Picture.hpp>
-#include <random>
+#include <Message.hpp>
+#include <chrono>
+#include <ctime>
 
 
 namespace rt_soft_autumn_school {
-	//helps to generate random picture
-	Picture GetRandPict();
+	class BarChart;
 
-	/// <summary>
-	/// devide src image on chunks
-	/// </summary>
-	/// <param name="pSrcPict">Source picture</param>
-	/// <param name="cntPxlsInChunk">count pixels in required chunk</param>
-	/// <returns></returns>
-	std::vector<ImageField> GetPixelChunks(const Picture& pSrcPict, size_t cntPxlsInChunk);
+
+	class Timer final{
+
+	public:
+		Timer(size_t seconds);
+
+		void Start();
+		void Stop();
+		bool IsWorking();
+		void Reset(size_t seconds);
+
+	private:
+		std::chrono::time_point<std::chrono::steady_clock> m_StartTime = std::chrono::steady_clock::now();
+		size_t m_stoppedSeconds;
+		bool m_bIsRunning = false;
+	};
+
+
+	class FileWriter final {
+
+	public:
+		static bool Write(const BarChart& contentStream, const std::wstring& strFilePath = L"BarChartResult.txt");
+	};
 
 
 	Message GenMessage();
-
 	std::vector<Interval> SplitMessage(const Message& srcMsg, size_t cntMsgChunks);
-	
-	
-	
 }

@@ -1,9 +1,11 @@
 #pragma once
-#include "Task.hpp"
 #include "UnboundedMpmcQueue.hpp"
+#include <functional>
+#include <future>
 
 namespace rt_soft_autumn_school {
 
+	using Task = std::function<void()>;
 
 	class ThreadPool {
 
@@ -15,7 +17,8 @@ namespace rt_soft_autumn_school {
 
 		template<typename MyTask, typename...Args>
 		static auto Spawn(MyTask&& tsk, Args&&... args)-> std::future<decltype(tsk(args...))> {
-			//see https://github.com/mtrebi/thread-pool/blob/master/README.md
+			
+			//this idea takes from: https://github.com/mtrebi/thread-pool/blob/master/README.md
 
 			auto& tp = Instance();
 
@@ -31,7 +34,7 @@ namespace rt_soft_autumn_school {
 			std::function<void()> wrapperFunc = [taskPtr]() {(*taskPtr)(); };
 
 			// Enqueue generic wrapper function
-			tp.tasks_queue_.put(wrapperFunc);
+			tp.m_tasksQueue.put(wrapperFunc);
 			
 			tp.m_cvIsBusy.notify_all();
 
@@ -42,45 +45,40 @@ namespace rt_soft_autumn_school {
 		
 	private:
 		// reserve 1 thread as an external
-		explicit ThreadPool(size_t nThreadsCnt = (std::thread::hardware_concurrency() - 1)) : continue_work_flag_{ true }
-		{
+		explicit ThreadPool(size_t nThreadsCnt = (std::thread::hardware_concurrency() - 1)) : m_continueWorkFlag(true){
 			CreateAndRunWorkers(nThreadsCnt);
 		}
 
 
-		~ThreadPool()
-		{
-			continue_work_flag_.store(false);
+		~ThreadPool(){
+			m_continueWorkFlag.store(false);
 			JoinAllWorkers();
 		}
 
-		void CreateAndRunWorkers(size_t nThreadsCnt)
-		{
-			thread_pool_.reserve(nThreadsCnt);
+		void CreateAndRunWorkers(size_t nThreadsCnt){
+			m_threadPool.reserve(nThreadsCnt);
 
 			for (size_t i = 0; i < nThreadsCnt; ++i)
-				thread_pool_.emplace_back([this]() {WorkerRoutine(); });
+				m_threadPool.emplace_back([this]() {WorkerRoutine(); });
 		}
 
 
-		void WorkerRoutine()
-		{
-			while (continue_work_flag_)
+		void WorkerRoutine(){
+			while (m_continueWorkFlag)
 			{
-				auto task = std::move(tasks_queue_.get());
+				auto task = std::move(m_tasksQueue.get());
 				task();
 			}
 		}
 
-		void JoinAllWorkers()
-		{
-			for (auto& worker : thread_pool_)
+		void JoinAllWorkers(){
+			for (auto& worker : m_threadPool)
 				worker.join();
 		}
 
-		std::vector<std::thread> thread_pool_;
-		UnboundedMpmcQueue<Task> tasks_queue_;
-		std::atomic<bool> continue_work_flag_;
+		std::vector<std::thread> m_threadPool;
+		UnboundedMpmcQueue<Task> m_tasksQueue;
+		std::atomic<bool> m_continueWorkFlag;
 
 		std::mutex m_isBusy;
 		std::condition_variable m_cvIsBusy;

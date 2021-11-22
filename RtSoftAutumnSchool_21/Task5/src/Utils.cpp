@@ -1,72 +1,10 @@
 #include "Utils.hpp"
+#include <random>
+#include <fstream>
+#include <codecvt>
+#include "BarChart.hpp"
 
 namespace rt_soft_autumn_school {
-	Picture GetRandPict()
-	{
-		Picture proxyPict;
-
-		std::random_device device;
-		std::mt19937  rng(device());
-
-		std::uniform_int_distribution<size_t> uniform_dist(0, 255);
-
-		//fill rand pixels
-		for (int w = 0; w < WIDTH; ++w)
-		{
-			for (int h = 0; h < HEIGHT; ++h)
-			{
-				size_t value = uniform_dist(rng);
-				proxyPict[w][h] = static_cast<uint8_t>(value);
-			}
-		}
-
-		return proxyPict;
-	}
-
-	std::vector<rt_soft_autumn_school::ImageField> GetPixelChunks(const Picture& pSrcPict, size_t cntPxlsInChunk)
-	{
-		std::vector<ImageField> chunks;
-
-		size_t nWidth = pSrcPict.GetW();
-		size_t nHeight = pSrcPict.GetH();
-		size_t step = cntPxlsInChunk - 1;
-
-		for (size_t j = 0; j < nWidth; j += step + 1)
-		{
-			for (size_t i = 0; i < nHeight; ++i)
-			{
-				Interval itnV{ i, i };
-				Interval itnH{ j, j };
-
-				size_t iEnd = i + step;
-				size_t jEnd = j + step;
-
-				bool bIsLast = false;
-				if (iEnd >= nHeight) {
-					iEnd = nHeight - 1;
-					bIsLast = true;
-				}
-				else {
-					i += step;
-				}
-
-				if (jEnd >= nWidth)
-					jEnd = nWidth - 1;
-
-				itnV.m_max = iEnd;
-				itnH.m_max = jEnd;
-
-				chunks.push_back(ImageField{ itnV , itnH });
-
-				if (bIsLast) {
-					i = 0;
-					break;
-				}
-			}
-		}
-
-		return chunks;
-	}
 
 	Message GenMessage(){
 		Message msg;
@@ -111,5 +49,53 @@ namespace rt_soft_autumn_school {
 		return interval;
 	}
 
-}
+	Timer::Timer(size_t seconds) : m_stoppedSeconds{ seconds }
+	{
 
+	}
+
+	void Timer::Start()
+	{
+		m_StartTime = std::chrono::steady_clock::now();
+		m_bIsRunning = true;
+	}
+
+	void Timer::Stop()
+	{
+		m_bIsRunning = false;
+	}
+
+	bool Timer::IsWorking()
+	{
+		m_bIsRunning = m_stoppedSeconds > static_cast<size_t>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - m_StartTime).count());
+
+		return m_bIsRunning;
+	}
+
+	void Timer::Reset(size_t seconds)
+	{
+		m_stoppedSeconds = seconds;
+		m_bIsRunning = true;
+	}
+
+	bool FileWriter::Write(const BarChart& contentStream, const std::wstring& strFilePath /*= L"BarChartResult.txt"*/)
+	{
+		std::wofstream out(strFilePath, std::wofstream::app);
+		out.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t>));
+
+		try
+		{
+			if (out.is_open())
+			{
+				out << contentStream;
+				out.close();
+				return true;
+			}
+		}
+		catch (const std::exception&)
+		{
+			out.close();
+		}
+		return false;
+	}
+}

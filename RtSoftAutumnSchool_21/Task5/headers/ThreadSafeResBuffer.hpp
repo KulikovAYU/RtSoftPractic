@@ -1,12 +1,12 @@
 #pragma once
 #include <mutex>
 #include <deque>
+#include <future>
 
 namespace rt_soft_autumn_school {
 
 	template<typename T>
 	class TsResBuffer {
-
 
 	public:
 		void Push(T val) {
@@ -19,7 +19,6 @@ namespace rt_soft_autumn_school {
 			tasks.emplace_back(std::move(promise));
 			m_hasMessage.notify_all();
 		}
-
 
 		std::promise<T> Pop() {
 		
@@ -44,6 +43,4 @@ namespace rt_soft_autumn_school {
 
 		std::deque <std::promise<T>> tasks;
 	};
-
-
 }
