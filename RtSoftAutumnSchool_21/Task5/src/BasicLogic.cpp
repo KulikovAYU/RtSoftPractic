@@ -16,9 +16,9 @@ namespace rt_soft_autumn_school {
 		//1. producer - produces data during 60 sec
 		//   and sends task to thread pool
 		//2. thread pool - which working calculating BarChart.
-		//   if task has been completed thread pool returns future, and result of future
-		//   is emplaced into thread safe buffer which contains promises for writer thread
-		//3. consumer - takes promises from thread safe buffer and write into file
+		//  thread pool returns future, and future
+		//  is emplaced into thread safe buffer which contains futures for writer thread
+		//3. consumer - takes(wait) futures from thread safe buffer and write into file
 		//If timer will stop we finish all tasks correctly
 
 
@@ -37,7 +37,7 @@ namespace rt_soft_autumn_school {
 
 					auto task = [&msg]() { BarChart gst; gst.FromMessage(msg); return gst; };
 					auto future = ThreadPool::Instance().Spawn(task);
-					threadSafeBuffer.Push(future.get());
+					threadSafeBuffer.Push(std::move(future));
 				}
 
 				isFinished = true;
@@ -50,9 +50,8 @@ namespace rt_soft_autumn_school {
 
 					while(!threadSafeBuffer.IsEmpty() && !isFinished){
 
-						auto promise = std::move(threadSafeBuffer.Pop());
-						auto future = promise.get_future();
-						auto result = future.get();
+						auto future = threadSafeBuffer.Pop();
+						auto result = future.get(); //wait
 						//write to file
 						FileWriter::Write(result);
 					}

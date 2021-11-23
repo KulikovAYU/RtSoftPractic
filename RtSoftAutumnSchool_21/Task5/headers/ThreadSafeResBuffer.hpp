@@ -9,25 +9,21 @@ namespace rt_soft_autumn_school {
 	class TsResBuffer {
 
 	public:
-		void Push(T val) {
+		void Push(std::future<T> futureRes) {
 
 			std::unique_lock<std::mutex> lock(m_sync);
-
-			auto promise = std::promise<T>();
-			promise.set_value(val);
-
-			tasks.emplace_back(std::move(promise));
+			tasks.emplace_back(std::move(futureRes));
 			m_hasMessage.notify_all();
 		}
 
-		std::promise<T> Pop() {
+		std::future<T> Pop() {
 		
 			std::unique_lock<std::mutex> lock(m_sync);
 
 			while (tasks.empty())
 				m_hasMessage.wait(lock);
 
-			std::promise<T> val = std::move(tasks.front());
+			std::future<T> val = std::move(tasks.front());
 			tasks.pop_front();
 			return val;
 		}
@@ -41,6 +37,6 @@ namespace rt_soft_autumn_school {
 		std::condition_variable m_hasMessage;
 		std::mutex m_sync;
 
-		std::deque <std::promise<T>> tasks;
+		std::deque <std::future<T>> tasks;
 	};
 }
