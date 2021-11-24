@@ -40,13 +40,12 @@ add_compile_definitions(_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 
 
 include_directories("${PROJECT_SOURCE_DIR}/headers"
-					"${PROJECT_SOURCE_DIR}/headers/ThreadPool")
+                    "${PROJECT_SOURCE_DIR}/headers/ThreadPool")
 
 add_executable(${PROJECT_NAME}
                ${SRC_FILES}
                ${HEADER_FILES}
-			   ${THREAD_POOL_FILES}
-			   )
+               ${THREAD_POOL_FILES})
 
 
 #add filters
