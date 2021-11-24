@@ -1,15 +1,15 @@
-[submodule "RtSoftAutumnSchool_21/Task1/vendors/googletest"]
-	path = RtSoftAutumnSchool_21/Task1/vendors/googletest
+[submodule "Task1/vendors/googletest"]
+	path = Task1/vendors/googletest
 	url = https://github.com/google/googletest.git
-[submodule "RtSoftAutumnSchool_21/Task2/vendors/googletest"]
-	path = RtSoftAutumnSchool_21/Task2/vendors/googletest
+[submodule "Task2/vendors/googletest"]
+	path = Task2/vendors/googletest
 	url = https://github.com/google/googletest.git
-[submodule "RtSoftAutumnSchool_21/Task3/vendors/googletest"]
-	path = RtSoftAutumnSchool_21/Task3/vendors/googletest
+[submodule "Task3/vendors/googletest"]
+	path = Task3/vendors/googletest
 	url = https://github.com/google/googletest.git
-[submodule "RtSoftAutumnSchool_21/Task4/vendors/googletest"]
-	path = RtSoftAutumnSchool_21/Task4/vendors/googletest
+[submodule "Task4/vendors/googletest"]
+	path = Task4/vendors/googletest
 	url = https://github.com/google/googletest.git
-[submodule "RtSoftAutumnSchool_21/Task5/vendors/googletest"]
-	path = RtSoftAutumnSchool_21/Task5/vendors/googletest
+[submodule "Task5/vendors/googletest"]
+	path = Task5/vendors/googletest
 	url = https://github.com/google/googletest.git
