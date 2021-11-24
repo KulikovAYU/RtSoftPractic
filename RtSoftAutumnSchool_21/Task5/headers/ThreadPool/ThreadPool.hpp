@@ -30,13 +30,9 @@ namespace rt_soft_autumn_school {
 			// Wrap packaged task into void function
 			std::function<void()> wrapperFunc = [taskPtr]() {(*taskPtr)(); };
 
-			auto& tp = Instance();
-
 			// Enqueue generic wrapper function
-			tp.m_tasksQueue.put(wrapperFunc);
+			m_tasksQueue.put(wrapperFunc);
 			
-			tp.m_cvIsBusy.notify_all();
-
 			// Return future from promise
 			return taskPtr->get_future();
 		}
@@ -78,9 +74,6 @@ namespace rt_soft_autumn_school {
 		std::vector<std::thread> m_threadPool;
 		UnboundedMpmcQueue<Task> m_tasksQueue;
 		std::atomic<bool> m_continueWorkFlag;
-
-		std::mutex m_isBusy;
-		std::condition_variable m_cvIsBusy;
 
 	};
 }
