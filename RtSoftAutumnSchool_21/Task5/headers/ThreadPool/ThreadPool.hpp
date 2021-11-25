@@ -2,6 +2,7 @@
 #include "UnboundedMpmcQueue.hpp"
 #include <functional>
 #include <future>
+#include <thread>
 
 namespace rt_soft_autumn_school {
 

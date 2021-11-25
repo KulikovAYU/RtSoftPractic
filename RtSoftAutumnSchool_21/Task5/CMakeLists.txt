@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 
 set (CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_compile_options("/std:c++latest")
+#add_compile_options("/std:c++latest")
 
 set(BAR_CHART_PROJECT_NAME RtSoft_BarChart)
 project(${BAR_CHART_PROJECT_NAME})
@@ -32,6 +32,7 @@ src/BarChart.cpp
 src/BasicLogic.cpp
 )
 
+
 #set startup sln
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY  VS_STARTUP_PROJECT ${BAR_CHART_PROJECT_NAME})
 
@@ -47,6 +48,12 @@ add_executable(${PROJECT_NAME}
                ${HEADER_FILES}
                ${THREAD_POOL_FILES})
 
+if (UNIX)
+#equivalent to  -lpthread
+TARGET_LINK_LIBRARIES( ${PROJECT_NAME}
+pthread
+)
+endif (UNIX)
 
 #add filters
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HEADER_FILES})

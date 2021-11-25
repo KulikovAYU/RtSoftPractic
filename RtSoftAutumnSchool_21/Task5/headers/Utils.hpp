@@ -2,7 +2,7 @@
 #include <Message.hpp>
 #include <chrono>
 #include <ctime>
-
+#include <string>
 
 namespace rt_soft_autumn_school {
 
@@ -29,7 +29,7 @@ namespace rt_soft_autumn_school {
 	class FileWriter final {
 
 	public:
-		static bool Write(const BarChart& contentStream, const std::wstring& strFilePath = L"BarChartResult.txt");
+		static bool Write(const BarChart& contentStream, const std::string& strFilePath = "BarChartResult.txt");
 	};
 
 

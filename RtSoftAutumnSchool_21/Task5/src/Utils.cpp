@@ -2,6 +2,7 @@
 #include <random>
 #include <fstream>
 #include <codecvt>
+#include <Constants.hpp>
 #include "BarChart.hpp"
 
 namespace rt_soft_autumn_school {
@@ -36,13 +37,14 @@ namespace rt_soft_autumn_school {
 		{
 			if (i != 0 && (i % cntMsgChunks == 0))
 			{
-				interval.emplace_back(nStart, i);
+				
+				interval.emplace_back(Interval{nStart, i});
 				nStart = i + 1;
 			}
 
 			if (i == srcMsg.GetSize() - 1 && (i % cntMsgChunks != 0))
 			{
-				interval.emplace_back(nStart, i);
+				interval.emplace_back(Interval{nStart, i});
 				break;
 			}
 		}
@@ -79,10 +81,9 @@ namespace rt_soft_autumn_school {
 		m_bIsRunning = true;
 	}
 
-	bool FileWriter::Write(const BarChart& contentStream, const std::wstring& strFilePath /*= L"BarChartResult.txt"*/)
+	bool FileWriter::Write(const BarChart& contentStream, const std::string& strFilePath /*= L"BarChartResult.txt"*/)
 	{
-		std::wofstream out(strFilePath, std::wofstream::app);
-		out.imbue(std::locale(std::locale::empty(), new std::codecvt_utf8<wchar_t>));
+		std::ofstream out(strFilePath, std::wofstream::app);
 
 		try
 		{

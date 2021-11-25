@@ -20,7 +20,7 @@ namespace rt_soft_autumn_school {
 		}
 	}
 
-	std::wofstream& operator<<(std::wofstream& out, const BarChart& gist)
+	std::ofstream& operator<<(std::ofstream& out, const BarChart& gist)
 	{
 		for (const auto& itm : gist.m_spacing)
 			out << itm << "\t";
