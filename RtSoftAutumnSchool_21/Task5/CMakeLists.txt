@@ -2,11 +2,14 @@ cmake_minimum_required(VERSION 3.9)
 
 set (CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#add_compile_options("/std:c++latest")
 
 set(BAR_CHART_PROJECT_NAME RtSoft_BarChart)
 project(${BAR_CHART_PROJECT_NAME})
 
+if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.12.25835)
+set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std:c++latest")
+set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std:c++latest")
+endif()
 
 #headers
 set (HEADER_FILES
