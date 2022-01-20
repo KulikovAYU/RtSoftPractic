@@ -10,10 +10,10 @@ namespace Tests
         public static HashTableWrapper<int, string> GetTestData()
         {
             HashTableWrapper<int, string> table_ = new HashTableWrapper<int, string>();
-            table_.Add(0, "Íóëü");
-            table_.Add(1, "Îäèí");
-            table_.Add(2, "Äâà");
-            table_.Add(3, "Òğè");
+            table_.Add(0, "ĞÑƒĞ»ÑŒ");
+            table_.Add(1, "ĞĞ´Ğ¸Ğ½");
+            table_.Add(2, "Ğ”Ğ²Ğ°");
+            table_.Add(3, "Ğ¢Ñ€Ğ¸");
 
             return table_;
         }
@@ -34,8 +34,8 @@ namespace Tests
         {
             var table_ = TestDataGenerator.GetTestData();
             int key = 4;
-            string val = "—åòûğå";
-            table_.Add(key, "—åòûğå");
+            string val = "â€”ĞµÑ‚Ñ‹Ñ€Ğµ";
+            table_.Add(key, "â€”ĞµÑ‚Ñ‹Ñ€Ğµ");
             Assert.True(table_[key] == val, $"Failed add key = {key} and value = {val} to container");
         }
 
@@ -43,7 +43,7 @@ namespace Tests
         public void LookThrow()
         {
             var table_ = TestDataGenerator.GetTestData();
-            List<string> vars = new List<string> { "Íóëü", "Îäèí", "Äâà", "Òğè" };
+            List<string> vars = new List<string> { "ĞÑƒĞ»ÑŒ", "ĞĞ´Ğ¸Ğ½", "Ğ”Ğ²Ğ°", "Ğ¢Ñ€Ğ¸" };
            
             for (int i = 0; i < table_.Count; ++i)
                 Assert.True(table_[i] == vars[i], "Counting was failed");
@@ -55,7 +55,7 @@ namespace Tests
             var table_ = TestDataGenerator.GetTestData();
 
             List<int> keys = new List<int> { 0, 1, 2, 3 };
-            List<string> values = new List<string> { "Íóëü", "Îäèí", "Äâà", "Òğè" };
+            List<string> values = new List<string> { "ĞÑƒĞ»ÑŒ", "ĞĞ´Ğ¸Ğ½", "Ğ”Ğ²Ğ°", "Ğ¢Ñ€Ğ¸" };
             keys.Reverse();
             values.Reverse();
 
