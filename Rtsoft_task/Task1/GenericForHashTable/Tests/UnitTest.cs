@@ -34,8 +34,8 @@ namespace Tests
         {
             var table_ = TestDataGenerator.GetTestData();
             int key = 4;
-            string val = "—етыре";
-            table_.Add(key, "—етыре");
+            string val = "Четыре";
+            table_.Add(key, "Четыре");
             Assert.True(table_[key] == val, $"Failed add key = {key} and value = {val} to container");
         }
 
