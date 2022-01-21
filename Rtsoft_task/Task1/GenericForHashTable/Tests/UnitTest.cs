@@ -30,6 +30,14 @@ namespace Tests
         }
 
         [Fact]
+        public void Clear()
+        {
+            var table_ = TestDataGenerator.GetTestData();
+            table_.Clear();
+            Assert.True(table_.Count == 0, $"Table wasn't cleared successfully");
+        }
+
+        [Fact]
         public void AddOneElement()
         {
             var table_ = TestDataGenerator.GetTestData();
