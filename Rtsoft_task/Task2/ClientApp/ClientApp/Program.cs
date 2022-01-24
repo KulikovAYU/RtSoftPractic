@@ -76,15 +76,15 @@ namespace ClientApp
         {
             //Client lci = new Client();
 
-            ConnectionPref pref =
-              ConnectionPref.NewBuilder().
-              SetHostNameOrAdress("localhost").
-              SetIp(Dns.GetHostEntry("localhost").AddressList[0]).
-              SetPortNum(11000).
-              Build();
+            //ConnectionPref pref =
+            //  ConnectionPref.NewBuilder().
+            //  SetHostNameOrAdress("localhost").
+            //  SetIp(Dns.GetHostEntry("localhost").AddressList[0]).
+            //  SetPortNum(11000).
+            //  Build();
 
-            Client1 cli = new Client1(pref);
-            cli.SendMessage("Hello world");
+            //Client1 cli = new Client1(pref);
+          //  cli.SendMessage("Hello world");
 
             Console.ReadLine();
         }

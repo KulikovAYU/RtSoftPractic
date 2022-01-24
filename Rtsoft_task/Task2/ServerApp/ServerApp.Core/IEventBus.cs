@@ -9,8 +9,6 @@ namespace ServerApp.Core
         void Error(string message);
     }
 
-
-    // Производный класс от EventArgs
     public class MessageEventArgs : EventArgs
     {
         public string Message;
