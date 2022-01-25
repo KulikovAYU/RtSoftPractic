@@ -11,3 +11,9 @@
 
 Расположение и статус сервиса показаны на картинке ниже
 ![task2](pictures/daemon_service.png?raw=true "Путь и статус сервиса")
+
+
+## Дополнительные инструменты
+Для просмотра dbus интерфейсов и вызова команд
+использовалась утилита QbusViewer
+![task2](pictures/qbus_viewer_tool.png?raw=true "утилита QbusViewer")

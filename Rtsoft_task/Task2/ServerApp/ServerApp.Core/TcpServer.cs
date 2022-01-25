@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace ServerApp.Core
@@ -26,8 +25,6 @@ namespace ServerApp.Core
         public void Start()
         {
             EstablishConnection();
-            //https://github.com/StepFanFly/CSoft-LogViewer/blob/dev/LogViewer/Infrastructure/Actors/AbstractActor.cs
-            //https://stackoverflow.com/questions/46128734/passing-json-data-over-tcp-socket-programming-c-sharp
             Task.Run(() => { CheckDisconnectedClients(); });
             Task.Run(async () => { await listenClientsAsync(); });
         }
