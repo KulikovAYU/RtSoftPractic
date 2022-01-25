@@ -22,16 +22,14 @@ namespace ClientView.ViewModels
         public string StatusText { get=> statusText_; set { statusText_ = value; 
                 this.RaisePropertyChanged(); } }
 
-        public string RemoteProcessName { get; set; } = new string("mspaint");
+        public string RemoteProcessName { get; set; } = new string("vlc");
         public string RemoteProcessArgs { get; set; } = new string("");
 
 
-        public string RemoteDbusCommand { get; set; } = new string("");
+        public string RemoteDbusServiceName { get; set; } = new string("foo-daemon.service");
+        public string RemoteSudoPwd { get; set; } = new string("");
 
         public ReactiveCommand<Unit, Unit> EstablishConnectCommand => ReactiveCommand.Create(() => {
-
-          //  this.RaisePropertyChanged(nameof(StatusText));
-
             client.EstablishConnection(Pref);
         });
 
@@ -44,29 +42,23 @@ namespace ClientView.ViewModels
 
         public ReactiveCommand<Unit, Unit> StopRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
-            //TODO: Сервер принимает json команду на запуск/останов процессе с заданным именем
-
-            RemoteProcCommand runCmd = new RemoteProcCommand(CommandType.eStopProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
-            var jsonCommand = JsonConvert.SerializeObject(runCmd);
+            RemoteProcCommand stopCmd = new RemoteProcCommand(CommandType.eStopProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
+            var jsonCommand = JsonConvert.SerializeObject(stopCmd);
             client.SendMessage(jsonCommand);
         });
 
         public ReactiveCommand<Unit, Unit> RunDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
-            int n = 1;
-
-
-            //  this.RaisePropertyChanged(nameof(StatusText));
-
-            //client.EstablishConnection(Pref);
+            RemoteProcCommand runCmd = new RemoteProcCommand(CommandType.eRunDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
+            var jsonCommand = JsonConvert.SerializeObject(runCmd);
+            client.SendMessage(jsonCommand);
         });
 
         public ReactiveCommand<Unit, Unit> StopDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
-            int n = 1;
-            //  this.RaisePropertyChanged(nameof(StatusText));
-
-            //client.EstablishConnection(Pref);
+            RemoteProcCommand runCmd = new RemoteProcCommand(CommandType.eStopDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
+            var jsonCommand = JsonConvert.SerializeObject(runCmd);
+            client.SendMessage(jsonCommand);
         });
 
         public void Print(string message)

@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
-
+using System.Text;
 
 namespace ServerApp.Core.Commands
 {
@@ -9,7 +9,7 @@ namespace ServerApp.Core.Commands
     {
         CommandType IRemoteCmd.GetIdent() => CommandType.eRunProc;
 
-        public bool Execute(string name, string args = null)
+        public bool Execute(string name, string args)
         {
             try
             {
@@ -29,27 +29,19 @@ namespace ServerApp.Core.Commands
 
             } catch (Exception)
             {
-            
-            
+                return false;
             }
-            
-
-           
-            return false;
         }
-
-       
     }
 
     public class RemoteStopProcCmd : IRemoteCmd
     {
         CommandType IRemoteCmd.GetIdent() => CommandType.eStopProc;
 
-        public bool Execute(string name, string args = null)
+        public bool Execute(string name, string args)
         {
             try
             {
-                var currProc =  Process.GetCurrentProcess();
                 var workers = Process.GetProcessesByName(name);
                 foreach (Process worker in workers)
                 {
@@ -63,24 +55,43 @@ namespace ServerApp.Core.Commands
             }
             catch (Exception)
             {
-
-
+                return false;
             }
-
-            return false;
         }
     }
+
 
     public class RemoteRunDbusCmd : IRemoteCmd
     {
         CommandType IRemoteCmd.GetIdent() => CommandType.eRunDbus;
 
-        public bool Execute(string name, string args = null)
+        public bool Execute(string name, string args)
         {
-            //Connection.Session.CreateProxy<>
+            //echo 27051989 | sudo -S dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager.StartUnit string:"foo-daemon.service" string:"replace"
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append($"echo {args} | ").
+                   Append("sudo -S dbus-send ").
+                   Append("--print-reply ").
+                   Append("--system ").
+                   Append("--type=method_call ").
+                   Append("--dest=org.freedesktop.systemd1 ").
+                   Append("/org/freedesktop/systemd1 ").
+                   Append("org.freedesktop.systemd1.Manager.StartUnit ").
+                   Append($"string:\"{name}\" ").
+                   Append("string:\"replace\"");
 
-            Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
-            return true;
+                var runScript = sb.ToString();
+                ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = $"-c \"{runScript}\"", RedirectStandardOutput = true, UseShellExecute = false };
+                Process proc = new Process() { StartInfo = startInfo, };
+                Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
+                return proc.Start();
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 
@@ -88,13 +99,35 @@ namespace ServerApp.Core.Commands
     {
         CommandType IRemoteCmd.GetIdent() => CommandType.eStopDbus;
 
-        public bool Execute(string name, string args = null)
+        public bool Execute(string name, string args)
         {
-            Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
-            return true;
+            //echo 27051989 | sudo -S dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager.StopUnit string:"foo-daemon.service" string:"fail"
+            try
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append($"echo {args} | ").
+                   Append("sudo -S dbus-send ").
+                   Append("--print-reply ").
+                   Append("--system ").
+                   Append("--type=method_call ").
+                   Append("--dest=org.freedesktop.systemd1 ").
+                   Append("/org/freedesktop/systemd1 ").
+                   Append("org.freedesktop.systemd1.Manager.StopUnit ").
+                   Append($"string:\"{name}\" ").
+                   Append("string:\"fail\"");
+
+                var stopScript = sb.ToString();
+                ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = $"-c \"{stopScript}\"", RedirectStandardOutput = true, UseShellExecute = false };
+                Process proc = new Process() { StartInfo = startInfo, };
+                Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
+                return proc.Start();
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
-
 
     public class CommandExecutor
     {
@@ -105,7 +138,7 @@ namespace ServerApp.Core.Commands
             string cmd = jObject["Name"].ToString();
             string args = jObject["Args"].ToString();
 
-            switch (cmdType) 
+            switch (cmdType)
             {
                 case CommandType.eRunProc: return new RemoteRunProcCmd().Execute(cmd, args);
                 case CommandType.eStopProc: return new RemoteStopProcCmd().Execute(cmd, args);
@@ -119,6 +152,4 @@ namespace ServerApp.Core.Commands
             return false;
         }
     }
-
-    
 }

@@ -6,8 +6,9 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ClientView.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
-        Title="ClientView">
+        Title="Client control panel">
 
+  <!--Create and inject data context on place-->
   <Design.DataContext>
     <vm:MainWindowViewModel/>
   </Design.DataContext>
@@ -44,13 +45,11 @@
           <Label HorizontalAlignment="Center" Content="User Name" />
           <TextBox Text="{Binding Pref.UserName}"/>
         </UniformGrid>
-        
+
         <Button Content="Connect" Grid.Column="4" Command="{Binding EstablishConnectCommand} "></Button>
       </Grid>
 
-
       <TextBox Grid.Row="1" Margin="0,10,0,10" TextAlignment="Left" Text="{Binding Path=StatusText, Mode= TwoWay}"/>
-
       <Grid Grid.Row="2" Margin="0,10,0,10">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
@@ -68,17 +67,16 @@
       <Grid Grid.Row="3" Margin="0,10,0,10">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="*"/>
           <ColumnDefinition Width="auto"/>
           <ColumnDefinition Width="auto"/>
         </Grid.ColumnDefinitions>
 
-        <TextBox Grid.Column="0" Margin="0,0,10,0" UseFloatingWatermark="False" Watermark="Dbus command name" TextAlignment="Left" Text="{Binding Path=RemoteDbusCommand, Mode= TwoWay}"/>
-        <Button Grid.Column="1" Content="Run" Command="{Binding RunDbusRemoteProcessCommand} "></Button>
-        <Button Grid.Column="2" Content="Stop" Command="{Binding StopDbusRemoteProcessCommand} "></Button>
+        <TextBox Grid.Column="0" Margin="0,0,10,0" UseFloatingWatermark="False" Watermark="Dbus service name" TextAlignment="Left" Text="{Binding Path=RemoteDbusServiceName, Mode= TwoWay}"/>
+        <TextBox Grid.Column="1" Margin="0,0,10,0" PasswordChar="#" UseFloatingWatermark="False" Watermark="Sudo password" TextAlignment="Left" Text="{Binding Path=RemoteSudoPwd, Mode= TwoWay}"/>
+        <Button Grid.Column="2" Content="Run" Command="{Binding RunDbusRemoteProcessCommand} "></Button>
+        <Button Grid.Column="3" Content="Stop" Command="{Binding StopDbusRemoteProcessCommand} "></Button>
       </Grid>
-
     </Grid>
-
   </Grid>
-
 </Window>

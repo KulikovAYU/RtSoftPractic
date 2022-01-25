@@ -6,6 +6,6 @@
     {
         CommandType GetIdent();
 
-        bool Execute(string name, string args = null);
+        bool Execute(string name, string args);
     }
 }
