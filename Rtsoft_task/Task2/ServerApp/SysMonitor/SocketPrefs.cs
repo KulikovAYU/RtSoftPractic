@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace ServerApp.Core
+namespace SysMonitor
 {
     public class SocketPrefs
     {

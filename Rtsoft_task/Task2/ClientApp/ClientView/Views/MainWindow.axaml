@@ -3,6 +3,7 @@
         xmlns:vm="using:ClientView.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ClientView.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
@@ -20,6 +21,7 @@
         <RowDefinition Height="*"/>
         <RowDefinition Height="50"/>
         <RowDefinition Height="50"/>
+        <RowDefinition Height="*"/>
       </Grid.RowDefinitions>
 
       <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Center">
@@ -77,6 +79,14 @@
         <Button Grid.Column="2" Content="Run" Command="{Binding RunDbusRemoteProcessCommand} "></Button>
         <Button Grid.Column="3" Content="Stop" Command="{Binding StopDbusRemoteProcessCommand} "></Button>
       </Grid>
+
+
+    <Grid Grid.Row="4" RowDefinitions="*, 4, *" Margin="10,0,0,0">
+       <lvc:CartesianChart Grid.Row="0" ZoomMode="X" Series="{Binding CoreTempSeries}" XAxes="{Binding XAxes}" LegendPosition="Right"/>
+      <GridSplitter Grid.Row="1" Background="LightGray" ResizeDirection="Rows"/>
+      <lvc:CartesianChart  Grid.Row="2" ZoomMode="X" Series="{Binding ServiceSeries}" XAxes="{Binding XAxes}"  LegendPosition="Right"/>
+      </Grid>
     </Grid>
+
   </Grid>
 </Window>

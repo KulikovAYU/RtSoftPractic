@@ -1,6 +1,6 @@
 ﻿using ServerApp.Core;
+using ServerApp.Core.Mqtt;
 using System;
-using System.Net;
 
 namespace ServerApp.Cons
 {
@@ -47,20 +47,11 @@ namespace ServerApp.Cons
     {
         static void Main(string[] args)
         {
-            SocketPrefs pref = 
-                SocketPrefs.NewBuilder().
-                SetHostNameOrAdress("localhost").
-                SetIp(Dns.GetHostEntry("localhost").AddressList[0]).
-                SetMaxConnections(10).
-                SetPortNum(11000).
-                Build();
-
             EventBusImpl eventBus = new EventBusImpl();
 
             UI ui = new UI();
             eventBus.ErrorHappened += ui.Error;
             eventBus.PrintHappened += ui.Print;
-
 
             //just immitation
             Logger log = new Logger();
@@ -68,10 +59,11 @@ namespace ServerApp.Cons
             eventBus.PrintHappened += log.Print;
 
 
-            TcpServer srv = new TcpServer(pref, eventBus);
-            srv.Start();
+            CoreEntryPoint.StartServices(eventBus);
 
             Console.ReadLine();
+
+            CoreEntryPoint.StopServices(eventBus);
         }
     }
 }

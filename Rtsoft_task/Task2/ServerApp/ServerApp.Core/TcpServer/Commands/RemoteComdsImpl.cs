@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using SysMonitor;
 using System;
 using System.Diagnostics;
 using System.Text;
@@ -7,9 +8,9 @@ namespace ServerApp.Core.Commands
 {
     public class RemoteRunProcCmd : IRemoteCmd
     {
-        CommandType IRemoteCmd.GetIdent() => CommandType.eRunProc;
+        public CommandType GetIdent() => CommandType.eRunProc;
 
-        public bool Execute(string name, string args)
+        public Response Execute(string name, string args)
         {
             try
             {
@@ -24,21 +25,21 @@ namespace ServerApp.Core.Commands
                 }))
                 {
                     Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
-                    return true;
+                    return new Response(GetIdent(), 200, string.Empty);
                 }
 
             } catch (Exception)
             {
-                return false;
+                return new Response(GetIdent(), 204, string.Empty);
             }
         }
     }
 
     public class RemoteStopProcCmd : IRemoteCmd
     {
-        CommandType IRemoteCmd.GetIdent() => CommandType.eStopProc;
+        public CommandType GetIdent() => CommandType.eStopProc;
 
-        public bool Execute(string name, string args)
+        public Response Execute(string name, string args)
         {
             try
             {
@@ -51,11 +52,11 @@ namespace ServerApp.Core.Commands
                     worker.Dispose();
                 }
 
-                return true;
+                return new Response(GetIdent(), 200, string.Empty); ;
             }
             catch (Exception)
             {
-                return false;
+                return new Response(GetIdent(), 204, string.Empty);
             }
         }
     }
@@ -63,9 +64,9 @@ namespace ServerApp.Core.Commands
 
     public class RemoteRunDbusCmd : IRemoteCmd
     {
-        CommandType IRemoteCmd.GetIdent() => CommandType.eRunDbus;
+        public CommandType GetIdent() => CommandType.eRunDbus;
 
-        public bool Execute(string name, string args)
+        public Response Execute(string name, string args)
         {
             //echo 27051989 | sudo -S dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager.StartUnit string:"foo-daemon.service" string:"replace"
             try
@@ -86,20 +87,28 @@ namespace ServerApp.Core.Commands
                 ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = $"-c \"{runScript}\"", RedirectStandardOutput = true, UseShellExecute = false };
                 Process proc = new Process() { StartInfo = startInfo, };
                 Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
-                return proc.Start();
+              
+                if (proc.Start())
+                {
+                    SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, name);
+                    return new Response(GetIdent(), 200, name);
+                }
+
             }
             catch (Exception)
             {
-                return false;
+                return new Response(GetIdent(), 204, string.Empty);
             }
+
+            return new Response(GetIdent(), 204, string.Empty);
         }
     }
 
     public class RemoteStopDbusCmd : IRemoteCmd
     {
-        CommandType IRemoteCmd.GetIdent() => CommandType.eStopDbus;
+        public CommandType GetIdent() => CommandType.eStopDbus;
 
-        public bool Execute(string name, string args)
+        public Response Execute(string name, string args)
         {
             //echo 27051989 | sudo -S dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager.StopUnit string:"foo-daemon.service" string:"fail"
             try
@@ -120,18 +129,26 @@ namespace ServerApp.Core.Commands
                 ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = $"-c \"{stopScript}\"", RedirectStandardOutput = true, UseShellExecute = false };
                 Process proc = new Process() { StartInfo = startInfo, };
                 Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
-                return proc.Start();
+
+                SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, name);
+
+                if (proc.Start())
+                {
+                    return new Response(GetIdent(), 200, name);
+                }
             }
             catch (Exception)
             {
-                return false;
+                return new Response(GetIdent(), 204, string.Empty);
             }
+
+            return new Response(GetIdent(), 204, string.Empty);
         }
     }
 
     public class CommandExecutor
     {
-        public static bool FromJSON(string cmdJSON)
+        public static Response FromJSON(string cmdJSON)
         {
             JObject jObject = JObject.Parse(cmdJSON);
             CommandType cmdType = (CommandType)int.Parse(jObject["Type"].ToString());
@@ -149,7 +166,7 @@ namespace ServerApp.Core.Commands
                     break;
             }
 
-            return false;
+            return new Response(CommandType.eUndef, 204, string.Empty);
         }
     }
 }

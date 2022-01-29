@@ -22,8 +22,21 @@ namespace ServerApp.Core
             eventBus_ = eventBus;
         }
 
+        public static SocketPrefs GetDefaultPrefs()
+        {
+            return
+                  SocketPrefs
+                  .NewBuilder()
+                  .SetIp("127.0.0.1")
+                  .SetMaxConnections(10)
+                  .SetPortNum(11000)
+                  .Build();
+        }
+
+
         public void Start()
         {
+           // CPUServiceMonitor.Calc("");
             EstablishConnection();
             Task.Run(() => { CheckDisconnectedClients(); });
             Task.Run(async () => { await listenClientsAsync(); });
@@ -64,17 +77,21 @@ namespace ServerApp.Core
                           StreamWriter sWriter = new StreamWriter(client.ClientData.GetStream(), Encoding.ASCII) { AutoFlush = true };
 
                           client.Name = await sReader.ReadLineAsync();
+                          client.Id = Guid.Parse(await sReader.ReadLineAsync());
+
                           if (client.ClientData.Connected)
                           {
                               eventBus_?.Print($"Client {client.Name} has join at server!");
-                              await sWriter.WriteLineAsync($"Hello {client.Name} from server =)");
+                              await sWriter.WriteLineAsync(new Response(CommandType.eEStablishConnect, 200, $"Hello {client.Name} from server =)").ToJSON());
                           }
 
                           //ok. if we connected wait message from server
                           while (client.ClientData.Connected)
                           {
+                              if(sReader.EndOfStream)
+                              continue;
                               //send back response
-
+                             
                               // reads from client stream
                               string sData = await sReader.ReadLineAsync();
                               if (sData == null)
@@ -83,16 +100,8 @@ namespace ServerApp.Core
                               eventBus_?.Print($"Recieved Data {sData}");
 
                               //execute command
-                              if (CommandExecutor.FromJSON(sData))
-                              {
-                                  eventBus_?.Print($"Command executed sucsesfully by client {client.Name} !");
-                                  await sWriter.WriteLineAsync($"Command executed successfully");
-                              }
-                              else 
-                              {
-                                  eventBus_?.Print($"Command executed failed by client {client.Name} !");
-                                  await sWriter.WriteLineAsync($"Command executed failed");
-                              }
+                              var response = CommandExecutor.FromJSON(sData);
+                              await sWriter.WriteLineAsync(response.ToJSON());
                           }
 
                           client.ClientData.Close();

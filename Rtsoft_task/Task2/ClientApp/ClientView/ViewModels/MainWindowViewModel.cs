@@ -1,6 +1,16 @@
 using ClientApp;
-using Newtonsoft.Json;
+using LiveChartsCore;
+using LiveChartsCore.Defaults;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Painting;
+using MQTTnet;
+using ProtoBuf;
 using ReactiveUI;
+using SkiaSharp;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Reactive;
 
 namespace ClientView.ViewModels
@@ -8,57 +18,101 @@ namespace ClientView.ViewModels
     public class MainWindowViewModel : ViewModelBase, IEventBus
     {
         public ConnectionPref Pref { get; set; }
+
+        public List<Axis> XAxes { get; set; }
+
+        public ObservableCollection<ISeries> ServiceSeries { get; set; } = new ObservableCollection<ISeries>();
+
+        public ObservableCollection<ISeries> CoreTempSeries { get; set; } = new ObservableCollection<ISeries>();
+
         public MainWindowViewModel()
         {
-            client = new Client1(this);
+            client = new Client(this);
             Pref = new ConnectionPref()
             {
-                HostNameOrAdress = "localhost",
+                HostNameOrAdress = "127.0.0.1",
                 PortNumber = 11000,
                 UserName = "Anton"
             };
+
+            XAxes = new List<Axis>
+            {
+                new()
+                {
+                    // Use the Label property to indicate the format of the labels in the axis
+                    // The Labeler takes the value of the label as parameter and must return it as string
+                    Labeler = (value) => " ",
+
+                    // The MinStep property lets you define the minimum separation (in chart values scale)
+                    // between every axis separator, in this case we don't want decimals,
+                    // so lets force it to be greater or equals than 1
+                    MinStep = 1,
+
+                    // labels rotations is in degrees (0 - 360)
+                    LabelsRotation = 0,
+
+                    SeparatorsPaint = new SolidColorPaint(SKColors.LightGray, 2)
+                }
+            };
+           // ServiceSeries = new ObservableCollection<ISeries>();
+
+            //var red = new SKColor(229, 57, 53);
+            //CoreTempSeries = new ObservableCollection<ISeries>
+            //{
+            //    new LineSeries<ObservableValue>
+            //    {
+            //        Values = new ObservableCollection<ObservableValue>(),
+            //        Name = "CPU Temperature",
+            //        GeometrySize = 5,
+            //        Stroke = new SolidColorPaint(red,5),
+            //        GeometryStroke = new SolidColorPaint(red, 2),
+            //        LineSmoothness = 1 // mark
+            //    }
+            //};
         }
 
-        public string StatusText { get=> statusText_; set { statusText_ = value; 
-                this.RaisePropertyChanged(); } }
+        public string StatusText
+        {
+            get => statusText_; set
+            {
+                statusText_ = value;
+                this.RaisePropertyChanged();
+            }
+        }
 
         public string RemoteProcessName { get; set; } = new string("vlc");
         public string RemoteProcessArgs { get; set; } = new string("");
 
-
         public string RemoteDbusServiceName { get; set; } = new string("foo-daemon.service");
         public string RemoteSudoPwd { get; set; } = new string("");
 
-        public ReactiveCommand<Unit, Unit> EstablishConnectCommand => ReactiveCommand.Create(() => {
+        public ReactiveCommand<Unit, Unit> EstablishConnectCommand => ReactiveCommand.Create(() =>
+        {
             client.EstablishConnection(Pref);
         });
 
         public ReactiveCommand<Unit, Unit> RunRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
-            RemoteProcCommand runCmd = new RemoteProcCommand(CommandType.eRunProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
-            var jsonCommand = JsonConvert.SerializeObject(runCmd);
-            client.SendMessage(jsonCommand);
+            RemoteProcCommand runremoteProcCmd = new RemoteProcCommand(CommandType.eRunProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
+            client.SendMessage(runremoteProcCmd.ToJSON());
         });
 
         public ReactiveCommand<Unit, Unit> StopRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
-            RemoteProcCommand stopCmd = new RemoteProcCommand(CommandType.eStopProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
-            var jsonCommand = JsonConvert.SerializeObject(stopCmd);
-            client.SendMessage(jsonCommand);
+            RemoteProcCommand stopremoteProcCmd = new RemoteProcCommand(CommandType.eStopProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
+            client.SendMessage(stopremoteProcCmd.ToJSON());
         });
 
         public ReactiveCommand<Unit, Unit> RunDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
-            RemoteProcCommand runCmd = new RemoteProcCommand(CommandType.eRunDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
-            var jsonCommand = JsonConvert.SerializeObject(runCmd);
-            client.SendMessage(jsonCommand);
+            RemoteProcCommand rundbusCmd = new RemoteProcCommand(CommandType.eRunDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
+            client.SendMessage(rundbusCmd.ToJSON());
         });
 
         public ReactiveCommand<Unit, Unit> StopDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
-            RemoteProcCommand runCmd = new RemoteProcCommand(CommandType.eStopDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
-            var jsonCommand = JsonConvert.SerializeObject(runCmd);
-            client.SendMessage(jsonCommand);
+            RemoteProcCommand stopDbusCmd = new RemoteProcCommand(CommandType.eStopDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
+            client.SendMessage(stopDbusCmd.ToJSON());
         });
 
         public void Print(string message)
@@ -71,10 +125,100 @@ namespace ClientView.ViewModels
             StatusText += $"[ERROR] {message}\n";
         }
 
-        private Client1 client;
+        public void OnMqqtEvent(MqttApplicationMessageReceivedEventArgs args)
+        {
+            
+
+            using (MemoryStream stream = new MemoryStream(args.ApplicationMessage.Payload))
+            {
+                if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU temp"))
+                {
+                    var cpuTemp = Serializer.Deserialize<CpuTemp>(stream);
+                    if (cpuTemp != null)
+                    {
+                        var series = CoreTempSeries.FirstOrDefault();
+                        if (series != null)
+                        {
+                            Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTemp}");
+                            ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
+                            values?.Add(new ObservableValue(cpuTemp.Value));
+
+                        }
+                    }
+                }
+                else if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU loading"))
+                {
+                    var cpuTime = Serializer.Deserialize<CpuTime>(stream);
+                    if (cpuTime != null)
+                    {
+                        var series = ServiceSeries.Where(x => x.Name == cpuTime.ServiceName).FirstOrDefault();
+                        if (series != null)
+                        {
+                            Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTime}");
+                            ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
+                            values?.Add(new ObservableValue(cpuTime.Value));
+                        }
+                    }
+                }
+            }
+            // Console.WriteLine($"+ Payload = {Encoding.UTF8.GetString(e.ApplicationMessage.Payload)}");
+            //Console.WriteLine($"+ QoS = {args.ApplicationMessage.QualityOfServiceLevel}");
+            //Console.WriteLine($"+ Retain = {args.ApplicationMessage.Retain}");
+            //Console.WriteLine();
+        }
+
+        public void OnResponse(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+
+            Response resp = new Response();
+            if (resp.FromJSON(message))
+            {
+                if (resp.StatusCode == 200)
+                {
+                    if (CommandType.eEStablishConnect == resp.Type) 
+                    {
+                        Print(resp.Body);
+
+                        AddUniqueMeasurement(CoreTempSeries, "CPU Temperature");
+
+                        if (CoreTempSeries.Last() is LineSeries<ObservableValue> newSer)
+                        {
+                            var red = new SKColor(229, 57, 53);
+                            newSer.Stroke = new SolidColorPaint(red, 5);
+                            newSer.GeometrySize = 5;
+                            newSer.GeometryStroke = new SolidColorPaint(red, 2);
+                            newSer.LineSmoothness = 1;
+                        }
+                    }
+                    if (CommandType.eRunDbus == resp.Type)
+                    {
+                        AddUniqueMeasurement(ServiceSeries, resp.Body);
+                    }
+                }
+              
+            }
+        }
+
+        void AddUniqueMeasurement(ObservableCollection<ISeries> srcSeries, string seriesName)
+        {
+            if (srcSeries.Where(s => s.Equals(seriesName)).FirstOrDefault() == null)
+            {
+                var processSeries = new LineSeries<ObservableValue>
+                {
+                    Values = new ObservableCollection<ObservableValue>(),
+                    Name = seriesName,
+                    GeometrySize = 5,
+                    LineSmoothness = 1 // mark
+                };
+
+                srcSeries.Add(processSeries);
+            }
+        }
+
+        private Client client;
 
         private string statusText_ = new string("");
-
-        
     }
 }

@@ -1,8 +1,9 @@
-﻿using System.Runtime.Serialization;
+﻿using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace ClientApp
 {
-    public enum CommandType { eUndef = -1, eRunProc, eStopProc, eRunDbus, eStopDbus }
+    public enum CommandType { eUndef = -1, eEStablishConnect, eRunProc, eStopProc, eRunDbus, eStopDbus }
 
     /// <summary>
     /// Command which represents remote process
@@ -17,5 +18,8 @@ namespace ClientApp
         public CommandType Type { get; set; }
         public string Name { get; set; }
         public string Args { get; set; }
+
+        public string ToJSON() => JsonConvert.SerializeObject(this);
+    
     }
 }
