@@ -88,8 +88,6 @@ namespace ServerApp.Core
                           //ok. if we connected wait message from server
                           while (client.ClientData.Connected)
                           {
-                              if(sReader.EndOfStream)
-                              continue;
                               //send back response
                              
                               // reads from client stream
@@ -100,7 +98,7 @@ namespace ServerApp.Core
                               eventBus_?.Print($"Recieved Data {sData}");
 
                               //execute command
-                              var response = CommandExecutor.FromJSON(sData);
+                              var response = CommandExecutor.FromJson(sData);
                               await sWriter.WriteLineAsync(response.ToJSON());
                           }
 

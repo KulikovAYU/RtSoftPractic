@@ -5,7 +5,7 @@ namespace SysMonitor
 {
     public enum DevidceType {eUndef, eCPUMonitor, eCPUTemp }
 
-    public class SysMonitorsPool
+    public static class SysMonitorsPool
     {
         private static MqttPublisher MqqtPublisher { get; set; }
 
@@ -26,15 +26,14 @@ namespace SysMonitor
             MqqtPublisher.Stop();
         }
 
-        public static void CreateDevice(DevidceType type,string Args = null)
+        public static void CreateDevice(DevidceType type,string args = null)
         {
             switch (type)
             {
                 case DevidceType.eCPUMonitor:
                     {
-                        int procId;
-                        if (Utils.GetProcIdByServiceName(out procId, Args))
-                            MqqtPublisher.AddDevice(new MqqtCPUServiceMonitor(procId, Args));
+                        if (Utils.GetProcIdByServiceName(out var procId, args))
+                            MqqtPublisher.AddDevice(new MqqtCPUServiceMonitor(procId, args));
                         break;
                     }
                 case DevidceType.eCPUTemp:

@@ -12,9 +12,8 @@ namespace SysMonitor
         {
             procId = -1;
 
-            string getProcIdScript = $"systemctl show--property MainPID--value {serviceName}";
-            string sOutput = "";
-            if (ExecuteScript(out sOutput, getProcIdScript)) 
+            string getProcIdScript = $"systemctl show --property MainPID --value {serviceName}";
+            if (ExecuteScript(out var sOutput, getProcIdScript)) 
             {
                 sOutput = Regex.Replace(sOutput, @"\s+", "");
 
@@ -28,12 +27,10 @@ namespace SysMonitor
         {
             cpuPercs = 0.0f;
             //ps -p 22534 -o %cpu 
-            string getCpuPercScript = $"- c \"ps -p {procId} -o %cpu\"";
+            string getCpuPercScript = $"ps -p {procId} -o %cpu";
 
-            string sOutput = "";
-            if (ExecuteScript(out sOutput, getCpuPercScript))
+            if (ExecuteScript(out var sOutput, getCpuPercScript))
             {
-
                 sOutput = sOutput.Remove(0, 5);
                 sOutput = sOutput.Substring(0, sOutput.IndexOf("\n"));
                 sOutput = Regex.Replace(sOutput, @"\s+", "");
@@ -58,11 +55,9 @@ namespace SysMonitor
                 using (StreamReader reader = new StreamReader(fileStream))
                 {
                     stringBuilder.Append(reader.ReadToEnd());
-                    if (float.TryParse(stringBuilder.ToString(), System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.NumberFormatInfo.InvariantInfo, out cpuTemp))
-                    {
-                        cpuTemp /= 1000;
-                        return true;
-                    }
+                    cpuTemp = float.Parse(stringBuilder.ToString());
+                    cpuTemp /= 1000;
+                    return true;
                 }
             }
             return false;
@@ -72,30 +67,28 @@ namespace SysMonitor
         {
             sSresult = "";
 
-            using (Process proc = new Process(){
+            using Process proc = new Process(){
                 StartInfo = new ProcessStartInfo()
                 {
                     FileName = "/bin/bash",
                     Arguments = $"-c \"{sScript}\"",
                     RedirectStandardOutput = true,
                     UseShellExecute = false
-                }})
-            {
-                var execRes = proc.Start();
+                }};
+            var execRes = proc.Start();
 
-                if (execRes)
+            if (execRes)
+            {
+                try
                 {
-                    try
-                    {
-                        sSresult = proc.StandardOutput.ReadToEnd();
-                        return proc.WaitForExit(10000);
-                    }
-                    catch (Exception)
-                    {
-                    }
+                    sSresult = proc.StandardOutput.ReadToEnd();
+                    return proc.WaitForExit(10000);
                 }
-                return execRes;
+                catch (Exception)
+                {
+                }
             }
+            return execRes;
         }
     }
 }

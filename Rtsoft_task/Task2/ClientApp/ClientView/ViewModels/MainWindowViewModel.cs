@@ -54,21 +54,6 @@ namespace ClientView.ViewModels
                     SeparatorsPaint = new SolidColorPaint(SKColors.LightGray, 2)
                 }
             };
-           // ServiceSeries = new ObservableCollection<ISeries>();
-
-            //var red = new SKColor(229, 57, 53);
-            //CoreTempSeries = new ObservableCollection<ISeries>
-            //{
-            //    new LineSeries<ObservableValue>
-            //    {
-            //        Values = new ObservableCollection<ObservableValue>(),
-            //        Name = "CPU Temperature",
-            //        GeometrySize = 5,
-            //        Stroke = new SolidColorPaint(red,5),
-            //        GeometryStroke = new SolidColorPaint(red, 2),
-            //        LineSmoothness = 1 // mark
-            //    }
-            //};
         }
 
         public string StatusText
@@ -127,8 +112,6 @@ namespace ClientView.ViewModels
 
         public void OnMqqtEvent(MqttApplicationMessageReceivedEventArgs args)
         {
-            
-
             using (MemoryStream stream = new MemoryStream(args.ApplicationMessage.Payload))
             {
                 if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU temp"))
@@ -142,7 +125,6 @@ namespace ClientView.ViewModels
                             Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTemp}");
                             ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
                             values?.Add(new ObservableValue(cpuTemp.Value));
-
                         }
                     }
                 }
@@ -151,7 +133,7 @@ namespace ClientView.ViewModels
                     var cpuTime = Serializer.Deserialize<CpuTime>(stream);
                     if (cpuTime != null)
                     {
-                        var series = ServiceSeries.Where(x => x.Name == cpuTime.ServiceName).FirstOrDefault();
+                        var series = ServiceSeries.FirstOrDefault(x => x.Name == cpuTime.ServiceName);
                         if (series != null)
                         {
                             Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTime}");
@@ -203,21 +185,21 @@ namespace ClientView.ViewModels
 
         void AddUniqueMeasurement(ObservableCollection<ISeries> srcSeries, string seriesName)
         {
-            if (srcSeries.Where(s => s.Equals(seriesName)).FirstOrDefault() == null)
+            if (srcSeries.FirstOrDefault(s => s.Name?.Equals(seriesName) == true) != null)
+                return;
+            
+            var processSeries = new LineSeries<ObservableValue>
             {
-                var processSeries = new LineSeries<ObservableValue>
-                {
-                    Values = new ObservableCollection<ObservableValue>(),
-                    Name = seriesName,
-                    GeometrySize = 5,
-                    LineSmoothness = 1 // mark
-                };
+                Values = new ObservableCollection<ObservableValue>(),
+                Name = seriesName,
+                GeometrySize = 5,
+                LineSmoothness = 1 // mark
+            };
 
-                srcSeries.Add(processSeries);
-            }
+            srcSeries.Add(processSeries);
         }
 
-        private Client client;
+        private readonly Client client;
 
         private string statusText_ = new string("");
     }

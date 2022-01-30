@@ -14,7 +14,7 @@ namespace ServerApp.Core.Commands
         {
             try
             {
-                using (var p = Process.Start(new ProcessStartInfo
+                using var p = Process.Start(new ProcessStartInfo
                 {
                     FileName = name, //file to execute
                     Arguments = args,//arguments to use
@@ -22,12 +22,10 @@ namespace ServerApp.Core.Commands
                     RedirectStandardOutput = true, //redirect standart output to this proc object
                     CreateNoWindow = false,//if this is a terminal app, don't show it
                     WindowStyle = ProcessWindowStyle.Normal //if this is a terminal app, don't show it
-                }))
-                {
-                    Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
-                    return new Response(GetIdent(), 200, string.Empty);
-                }
-
+                });
+                p?.WaitForExit();
+                Console.WriteLine($"Invoked command {GetType()} ; name = {name}; ags = {args}");
+                return new Response(GetIdent(), 200, string.Empty);
             } catch (Exception)
             {
                 return new Response(GetIdent(), 204, string.Empty);
@@ -90,6 +88,7 @@ namespace ServerApp.Core.Commands
               
                 if (proc.Start())
                 {
+                    proc.WaitForExit();
                     SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, name);
                     return new Response(GetIdent(), 200, name);
                 }
@@ -134,6 +133,7 @@ namespace ServerApp.Core.Commands
 
                 if (proc.Start())
                 {
+                    proc.WaitForExit();
                     return new Response(GetIdent(), 200, name);
                 }
             }
@@ -146,14 +146,14 @@ namespace ServerApp.Core.Commands
         }
     }
 
-    public class CommandExecutor
+    public static class CommandExecutor
     {
-        public static Response FromJSON(string cmdJSON)
+        public static Response FromJson(string cmdJson)
         {
-            JObject jObject = JObject.Parse(cmdJSON);
-            CommandType cmdType = (CommandType)int.Parse(jObject["Type"].ToString());
-            string cmd = jObject["Name"].ToString();
-            string args = jObject["Args"].ToString();
+            JObject jObject = JObject.Parse(cmdJson);
+            CommandType cmdType = (CommandType)int.Parse(jObject["Type"]?.ToString() ?? string.Empty);
+            string cmd = jObject["Name"]?.ToString();
+            string args = jObject["Args"]?.ToString();
 
             switch (cmdType)
             {

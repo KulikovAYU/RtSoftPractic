@@ -19,8 +19,7 @@ namespace SysMonitor.Devices
 
     class MqqtCPUTemperatureMonitor : IMqqtMessageSender
     {
-        private CpuTemp cpuTemp_ = new CpuTemp();
-
+        private readonly CpuTemp cpuTemp_ = new CpuTemp();
 
         public string GetDescription() => $"{GetTopicName()}; value = {cpuTemp_.Value}; time point = {cpuTemp_.TimePoint};";
 
@@ -28,8 +27,7 @@ namespace SysMonitor.Devices
         {
             cpuTemp_.TimePoint = DateTime.Now;
             cpuTemp_.Value = 0.0f;
-            float cpuTemp;
-            if (Utils.GetCPUTemperature(out cpuTemp))
+            if (Utils.GetCPUTemperature(out var cpuTemp))
                 cpuTemp_.Value = cpuTemp;
 
             using (MemoryStream stream = new MemoryStream())
