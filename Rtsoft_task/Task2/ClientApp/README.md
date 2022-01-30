@@ -19,3 +19,16 @@
 11. Пароль для рутовой записи (sudo)
 12. Кнопка запуска сервиса
 13. Кнопка останова сервиса
+
+
+## Скриншоты по третьей части задания
+
+Верхний график - график температуры CPU (из sysfs (/sys/devices/virtual/thermal/thermal_zoneX/temp) )
+Нижний график - график загрузки процессом CPU(Main PID)
+![task3](pictures/client_control_panel_with_cpu_data.png?raw=true "Панель управления клиента")
+
+Код программы, запущенной сервисами foo-daemon.service и foo-daemon1.service
+![task3](pictures/simple_programm.png?raw=true "Simple Program")
+
+Мониторинг загрузки сервисами foo-daemon.service и foo-daemon1.service CPU
+![task3](pictures/service_data.png?raw=true "CPU Loading by foo-daemon.service and foo-daemon1.service")
