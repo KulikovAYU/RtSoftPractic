@@ -74,13 +74,14 @@ namespace ClientApp
             });
         }
 
-        public void EstablishConnection(ConnectionPref pref)
+        public async Task EstablishConnectionAsync(ConnectionPref pref)
         {
             try
             {
                 pref_ = pref;
                 eventBus_?.Print("Establishing connection");
-                client_.Connect(pref_.HostNameOrAdress, pref_.PortNumber);
+
+                await client_.ConnectAsync(pref_.HostNameOrAdress, pref_.PortNumber);
 
                 NetworkStream stream = client_.GetStream();
                 sReader_ = new StreamReader(stream, Encoding.ASCII);

@@ -12,6 +12,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Threading.Tasks;
 
 namespace ClientView.ViewModels
 {
@@ -61,7 +62,7 @@ namespace ClientView.ViewModels
             get => statusText_; set
             {
                 statusText_ = value;
-                this.RaisePropertyChanged();
+                this.RaisePropertyChanged("StatusText");
             }
         }
 
@@ -71,15 +72,16 @@ namespace ClientView.ViewModels
         public string RemoteDbusServiceName { get; set; } = new string("foo-daemon.service");
         public string RemoteSudoPwd { get; set; } = new string("");
 
-        public ReactiveCommand<Unit, Unit> EstablishConnectCommand => ReactiveCommand.Create(() =>
+        public ReactiveCommand<Unit, Task> EstablishConnectCommand => ReactiveCommand.Create(async () =>
         {
-            client.EstablishConnection(Pref);
+            await client.EstablishConnectionAsync(Pref);
 
             this.RaisePropertyChanged("RunRemoteProcessCommand");
             this.RaisePropertyChanged("StopRemoteProcessCommand");
             this.RaisePropertyChanged("RunDbusRemoteProcessCommand");
             this.RaisePropertyChanged("StopDbusRemoteProcessCommand");
         });
+
 
         public ReactiveCommand<Unit, Unit> RunRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
