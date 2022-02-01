@@ -51,6 +51,9 @@ namespace ServerApp.Core.Commands
             try
             {
                 var workers = Process.GetProcessesByName(name_);
+                if(workers.Length == 0)
+                    return new Response(GetIdent(), 204, $"Remote host doesn't contains {this}");
+
                 foreach (Process worker in workers)
                 {
                     Console.WriteLine($"Invoked command {this}");

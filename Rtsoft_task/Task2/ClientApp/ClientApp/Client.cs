@@ -11,7 +11,7 @@ namespace ClientApp
 {
     public class Client
     {
-        public bool IsConnected { get; private set; }
+        public bool IsConnected { get; private set; } = false;
         private StreamReader sReader_;
         private StreamWriter sWriter_;
         private readonly TcpClient client_;
@@ -76,29 +76,33 @@ namespace ClientApp
 
         public async Task EstablishConnectionAsync(ConnectionPref pref)
         {
-            try
+            if (!IsConnected)
             {
-                pref_ = pref;
-                eventBus_?.Print("Establishing connection");
+                try
+                {
+                    pref_ = pref;
+                    eventBus_?.Print("Establishing connection");
 
-                await client_.ConnectAsync(pref_.HostNameOrAdress, pref_.PortNumber);
+                    await client_.ConnectAsync(pref_.HostNameOrAdress, pref_.PortNumber);
 
-                NetworkStream stream = client_.GetStream();
-                sReader_ = new StreamReader(stream, Encoding.ASCII);
-                sWriter_ = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true };
+                    NetworkStream stream = client_.GetStream();
+                    sReader_ = new StreamReader(stream, Encoding.ASCII);
+                    sWriter_ = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true };
 
-                sWriter_.WriteLine(pref_.UserName);
-                sWriter_.WriteLine(pref_.Id);
+                    sWriter_.WriteLine(pref_.UserName);
+                    sWriter_.WriteLine(pref_.Id);
 
-                EstablishMqttConnection(pref_);
+                    EstablishMqttConnection(pref_);
 
-                WaitForData();
-                IsConnected = true;
+                    WaitForData();
+                    IsConnected = client_.Connected;
+                }
+                catch (Exception ex)
+                {
+                    eventBus_.Error(ex.Message);
+                }
             }
-            catch(Exception ex)
-            {
-                eventBus_.Error(ex.Message);
-            }
+           
         }
 
         void EstablishMqttConnection(ConnectionPref pref)
