@@ -12,6 +12,4 @@ namespace ClientApp
 
         void OnResponse(string message);
     }
-
-  
 }

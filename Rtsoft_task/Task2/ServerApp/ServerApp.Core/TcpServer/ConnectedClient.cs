@@ -1,5 +1,4 @@
-﻿using SysMonitor.Mqtt;
-using System;
+﻿using System;
 using System.Net.Sockets;
 
 namespace ServerApp.Core
@@ -11,7 +10,6 @@ namespace ServerApp.Core
         public string Name { get; set; }
 
         public Guid Id { get; set; }
-        //TODO: Add reciever
 
         public ConnectedClient(TcpClient newClient)
         {
@@ -22,8 +20,5 @@ namespace ServerApp.Core
         {
             return $"{Name}; Data: {ClientData.Client.RemoteEndPoint}";
         }
-
-
-
     }
 }

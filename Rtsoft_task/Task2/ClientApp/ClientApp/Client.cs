@@ -1,7 +1,6 @@
 ﻿using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Options;
-using ProtoBuf;
 using System;
 using System.IO;
 using System.Net.Sockets;
@@ -12,9 +11,10 @@ namespace ClientApp
 {
     public class Client
     {
+        public bool IsConnected { get; private set; }
         private StreamReader sReader_;
         private StreamWriter sWriter_;
-        private TcpClient client_;
+        private readonly TcpClient client_;
         private ConnectionPref pref_;
         private IMqttClient clientMqtt_;
         IEventBus eventBus_;
@@ -22,7 +22,7 @@ namespace ClientApp
         public Client(IEventBus eventBus = null)
         {
             eventBus_ = eventBus;
-            //EstablishConnection();
+            client_ = new TcpClient();
         }
 
         public void SendMessage(string msg)
@@ -76,22 +76,28 @@ namespace ClientApp
 
         public void EstablishConnection(ConnectionPref pref)
         {
-            pref_ = pref;
-            eventBus_?.Print("Установка соединения");
-            client_ = new TcpClient();
-            client_.Connect(pref_.HostNameOrAdress, pref_.PortNumber);
-            eventBus_?.Print("Соединение установлено");
+            try
+            {
+                pref_ = pref;
+                eventBus_?.Print("Establishing connection");
+                client_.Connect(pref_.HostNameOrAdress, pref_.PortNumber);
 
-            NetworkStream stream = client_.GetStream();
-            sReader_ = new StreamReader(stream, Encoding.ASCII);
-            sWriter_ = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true };
-            
-            sWriter_.WriteLine(pref_.UserName);
-            sWriter_.WriteLine(pref_.Id);
+                NetworkStream stream = client_.GetStream();
+                sReader_ = new StreamReader(stream, Encoding.ASCII);
+                sWriter_ = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true };
 
-            EstablishMqttConnection(pref_);
+                sWriter_.WriteLine(pref_.UserName);
+                sWriter_.WriteLine(pref_.Id);
 
-            WaitForData();
+                EstablishMqttConnection(pref_);
+
+                WaitForData();
+                IsConnected = true;
+            }
+            catch(Exception ex)
+            {
+                eventBus_.Error(ex.Message);
+            }
         }
 
         void EstablishMqttConnection(ConnectionPref pref)
@@ -110,7 +116,6 @@ namespace ClientApp
             clientMqtt_.UseConnectedHandler(e =>
             {
                 eventBus_?.Print("Connected successfully with MQTT Brokers.");
-                //Console.WriteLine("Connected successfully with MQTT Brokers.");
 
                 //Subscribe to topic
                 clientMqtt_.SubscribeAsync(new TopicFilterBuilder().WithTopic("RemoteSrvrData/#").Build()).Wait();
@@ -119,7 +124,6 @@ namespace ClientApp
             clientMqtt_.UseDisconnectedHandler(e =>
             {
                 eventBus_?.Print("Disconnected from MQTT Brokers.");
-                //Console.WriteLine("Disconnected from MQTT Brokers.");
             });
             clientMqtt_.UseApplicationMessageReceivedHandler(e =>
             {
@@ -130,6 +134,5 @@ namespace ClientApp
             //actually connect
             clientMqtt_.ConnectAsync(options).Wait();
         }
-
     }
 }

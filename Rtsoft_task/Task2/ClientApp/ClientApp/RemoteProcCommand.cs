@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System.Runtime.Serialization;
 
 namespace ClientApp
 {
@@ -20,6 +19,5 @@ namespace ClientApp
         public string Args { get; set; }
 
         public string ToJSON() => JsonConvert.SerializeObject(this);
-    
     }
 }

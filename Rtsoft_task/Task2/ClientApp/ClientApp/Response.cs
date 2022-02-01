@@ -5,7 +5,7 @@ namespace ClientApp
 {
     public class Response
     {
-        public CommandType Type { get; set; }
+        public CommandType Type { get; set; } = CommandType.eUndef;
         public int StatusCode { get; set; }
         public string Body { get; set; }
 

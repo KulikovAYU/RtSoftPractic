@@ -74,31 +74,37 @@ namespace ClientView.ViewModels
         public ReactiveCommand<Unit, Unit> EstablishConnectCommand => ReactiveCommand.Create(() =>
         {
             client.EstablishConnection(Pref);
+
+            this.RaisePropertyChanged("RunRemoteProcessCommand");
+            this.RaisePropertyChanged("StopRemoteProcessCommand");
+            this.RaisePropertyChanged("RunDbusRemoteProcessCommand");
+            this.RaisePropertyChanged("StopDbusRemoteProcessCommand");
         });
 
         public ReactiveCommand<Unit, Unit> RunRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
             RemoteProcCommand runremoteProcCmd = new RemoteProcCommand(CommandType.eRunProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
             client.SendMessage(runremoteProcCmd.ToJSON());
-        });
+        }, this.WhenAnyValue(x => x.client.IsConnected));
+
 
         public ReactiveCommand<Unit, Unit> StopRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
             RemoteProcCommand stopremoteProcCmd = new RemoteProcCommand(CommandType.eStopProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
             client.SendMessage(stopremoteProcCmd.ToJSON());
-        });
+        }, this.WhenAnyValue(x => x.client.IsConnected));
 
         public ReactiveCommand<Unit, Unit> RunDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
             RemoteProcCommand rundbusCmd = new RemoteProcCommand(CommandType.eRunDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
             client.SendMessage(rundbusCmd.ToJSON());
-        });
+        }, this.WhenAnyValue(x => x.client.IsConnected));
 
         public ReactiveCommand<Unit, Unit> StopDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
             RemoteProcCommand stopDbusCmd = new RemoteProcCommand(CommandType.eStopDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
             client.SendMessage(stopDbusCmd.ToJSON());
-        });
+        }, this.WhenAnyValue(x => x.client.IsConnected));
 
         public void Print(string message)
         {
@@ -159,7 +165,7 @@ namespace ClientView.ViewModels
             {
                 if (resp.StatusCode == 200)
                 {
-                    if (CommandType.eEStablishConnect == resp.Type) 
+                    if (CommandType.eEStablishConnect == resp.Type)
                     {
                         Print(resp.Body);
 
@@ -174,12 +180,15 @@ namespace ClientView.ViewModels
                             newSer.LineSmoothness = 1;
                         }
                     }
-                    if (CommandType.eRunDbus == resp.Type)
+                    else if (CommandType.eRunDbus == resp.Type)
                     {
                         AddUniqueMeasurement(ServiceSeries, resp.Body);
                     }
                 }
-              
+                else
+                {
+                    Error(resp.Body);
+                }
             }
         }
 
@@ -199,7 +208,7 @@ namespace ClientView.ViewModels
             srcSeries.Add(processSeries);
         }
 
-        private readonly Client client;
+        public Client client { get; private set; }
 
         private string statusText_ = new string("");
     }
