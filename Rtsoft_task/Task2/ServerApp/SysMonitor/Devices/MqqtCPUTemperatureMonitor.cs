@@ -17,32 +17,32 @@ namespace SysMonitor.Devices
     }
 
 
-    class MqqtCPUTemperatureMonitor : IMqqtMessageSender
+    class MqqtCpuTemperatureMonitor : IMqqtMessageSender
     {
         private readonly CpuTemp cpuTemp_ = new CpuTemp();
 
         public string GetDescription() => $"{GetTopicName()}; value = {cpuTemp_.Value}; time point = {cpuTemp_.TimePoint};";
+        public string GetServiceName() => "all";
+        
 
         public MqttApplicationMessage GetMsg()
         {
             cpuTemp_.TimePoint = DateTime.Now;
             cpuTemp_.Value = 0.0f;
-            if (Utils.GetCPUTemperature(out var cpuTemp))
+            if (Utils.GetCpuTemperature(out var cpuTemp))
                 cpuTemp_.Value = cpuTemp;
 
-            using (MemoryStream stream = new MemoryStream())
-            {
-                Serializer.Serialize(stream, cpuTemp_);
+            using MemoryStream stream = new MemoryStream();
+            Serializer.Serialize(stream, cpuTemp_);
 
-                var cpuTempProtoMsg = new MqttApplicationMessageBuilder()
-                        .WithTopic(GetTopicName())
-                        .WithPayload(stream.ToArray())
-                        .WithExactlyOnceQoS()
-                        .WithRetainFlag()
-                        .Build();
+            var cpuTempProtoMsg = new MqttApplicationMessageBuilder()
+                .WithTopic(GetTopicName())
+                .WithPayload(stream.ToArray())
+                .WithExactlyOnceQoS()
+                .WithRetainFlag()
+                .Build();
 
-                return cpuTempProtoMsg;
-            }
+            return cpuTempProtoMsg;
         }
 
         public DevidceType Type => DevidceType.eCPUTemp;

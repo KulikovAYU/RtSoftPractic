@@ -12,8 +12,8 @@ namespace SysMonitor.Mqtt
 {
     public class MqttPublisher
     {
-        private SocketPrefs prefs_;
-        public IMqttClient Client { get; private set; }
+        private readonly SocketPrefs prefs_;
+        private IMqttClient Client { get; set; }
 
         public MqttPublisher(SocketPrefs prefs)
         {
@@ -82,8 +82,10 @@ namespace SysMonitor.Mqtt
                 });
 
             }
-            catch (Exception )
-            { }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         public void AddDevice(IMqqtMessageSender sender)
@@ -92,9 +94,14 @@ namespace SysMonitor.Mqtt
                 devices_.Add(sender);
         }
 
-        public void RemoveDevice(string topicName)
+        public void RemoveDeviceByTopic(string topicName)
         {
-            devices_.Remove(devices_.FirstOrDefault(topName => topName.Equals(topicName)));
+            devices_.Remove(devices_.FirstOrDefault(topName => topName.GetTopicName().Equals(topicName)));
+        }
+        
+        public void RemoveDevice(DevidceType devType, string args = "")
+        {
+            devices_.Remove(devices_.FirstOrDefault(type => type.Type.Equals(devType) &&  args.Equals(type.GetServiceName())));
         }
 
         public void Stop()
@@ -107,11 +114,11 @@ namespace SysMonitor.Mqtt
             foreach (var dev in devices_)
             {
                 Console.WriteLine($"publishing at {DateTime.UtcNow}; client {dev.GetDescription()};");
-                _ = await Client.PublishAsync(dev?.GetMsg());
+                _ = await Client.PublishAsync(dev.GetMsg());
             }
               
         }
 
-        List<IMqqtMessageSender> devices_ = new List<IMqqtMessageSender>();
+        private List<IMqqtMessageSender> devices_ = new List<IMqqtMessageSender>();
     }
 }

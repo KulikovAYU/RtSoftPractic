@@ -33,12 +33,12 @@ namespace SysMonitor
                 case DevidceType.eCPUMonitor:
                     {
                         if (Utils.GetProcIdByServiceName(out var procId, args))
-                            MqqtPublisher.AddDevice(new MqqtCPUServiceMonitor(procId, args));
+                            MqqtPublisher.AddDevice(new MqqtCpuServiceMonitor(procId, args));
                         break;
                     }
                 case DevidceType.eCPUTemp:
                     {
-                        MqqtPublisher.AddDevice(new MqqtCPUTemperatureMonitor());
+                        MqqtPublisher.AddDevice(new MqqtCpuTemperatureMonitor());
                         break;
                     }
                 case DevidceType.eUndef:
@@ -47,9 +47,9 @@ namespace SysMonitor
             }
         }
 
-        public static void RemoveDevice(DevidceType type, string Args = null)
+        public static void RemoveDevice(DevidceType type, string args = null)
         {
-           
+            MqqtPublisher.RemoveDevice(type, args);
             //MqqtPublisher.RemoveDevice()
             //TODO: Impl
 

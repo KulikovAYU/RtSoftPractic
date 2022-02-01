@@ -28,7 +28,7 @@ namespace ClientView.ViewModels
 
         public MainWindowViewModel()
         {
-            client = new Client(this);
+            client_ = new Client(this);
             Pref = new ConnectionPref()
             {
                 HostNameOrAdress = "127.0.0.1",
@@ -42,7 +42,7 @@ namespace ClientView.ViewModels
                 {
                     // Use the Label property to indicate the format of the labels in the axis
                     // The Labeler takes the value of the label as parameter and must return it as string
-                    Labeler = (value) => " ",
+                    Labeler = (value) => "",
 
                     // The MinStep property lets you define the minimum separation (in chart values scale)
                     // between every axis separator, in this case we don't want decimals,
@@ -62,7 +62,7 @@ namespace ClientView.ViewModels
             get => statusText_; set
             {
                 statusText_ = value;
-                this.RaisePropertyChanged("StatusText");
+                this.RaisePropertyChanged();
             }
         }
 
@@ -74,7 +74,7 @@ namespace ClientView.ViewModels
 
         public ReactiveCommand<Unit, Task> EstablishConnectCommand => ReactiveCommand.Create(async () =>
         {
-            await client.EstablishConnectionAsync(Pref);
+            await client_.EstablishConnectionAsync(Pref);
 
             this.RaisePropertyChanged("RunRemoteProcessCommand");
             this.RaisePropertyChanged("StopRemoteProcessCommand");
@@ -86,27 +86,27 @@ namespace ClientView.ViewModels
         public ReactiveCommand<Unit, Unit> RunRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
             RemoteProcCommand runremoteProcCmd = new RemoteProcCommand(CommandType.eRunProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
-            client.SendMessage(runremoteProcCmd.ToJSON());
-        }, this.WhenAnyValue(x => x.client.IsConnected));
+            client_.SendMessage(runremoteProcCmd.ToJSON());
+        }, this.WhenAnyValue(x => x.client_.IsConnected));
 
 
         public ReactiveCommand<Unit, Unit> StopRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
             RemoteProcCommand stopremoteProcCmd = new RemoteProcCommand(CommandType.eStopProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
-            client.SendMessage(stopremoteProcCmd.ToJSON());
-        }, this.WhenAnyValue(x => x.client.IsConnected));
+            client_.SendMessage(stopremoteProcCmd.ToJSON());
+        }, this.WhenAnyValue(x => x.client_.IsConnected));
 
         public ReactiveCommand<Unit, Unit> RunDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
             RemoteProcCommand rundbusCmd = new RemoteProcCommand(CommandType.eRunDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
-            client.SendMessage(rundbusCmd.ToJSON());
-        }, this.WhenAnyValue(x => x.client.IsConnected));
+            client_.SendMessage(rundbusCmd.ToJSON());
+        }, this.WhenAnyValue(x => x.client_.IsConnected));
 
         public ReactiveCommand<Unit, Unit> StopDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
         {
             RemoteProcCommand stopDbusCmd = new RemoteProcCommand(CommandType.eStopDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
-            client.SendMessage(stopDbusCmd.ToJSON());
-        }, this.WhenAnyValue(x => x.client.IsConnected));
+            client_.SendMessage(stopDbusCmd.ToJSON());
+        }, this.WhenAnyValue(x => x.client_.IsConnected));
 
         public void Print(string message)
         {
@@ -120,37 +120,36 @@ namespace ClientView.ViewModels
 
         public void OnMqqtEvent(MqttApplicationMessageReceivedEventArgs args)
         {
-            using (MemoryStream stream = new MemoryStream(args.ApplicationMessage.Payload))
+            using var stream = new MemoryStream(args.ApplicationMessage.Payload);
+            if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU temp"))
             {
-                if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU temp"))
+                var cpuTemp = Serializer.Deserialize<CpuTemp>(stream);
+                if (cpuTemp != null)
                 {
-                    var cpuTemp = Serializer.Deserialize<CpuTemp>(stream);
-                    if (cpuTemp != null)
+                    var series = CoreTempSeries.FirstOrDefault();
+                    if (series != null)
                     {
-                        var series = CoreTempSeries.FirstOrDefault();
-                        if (series != null)
-                        {
-                            Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTemp}");
-                            ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
-                            values?.Add(new ObservableValue(cpuTemp.Value));
-                        }
-                    }
-                }
-                else if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU loading"))
-                {
-                    var cpuTime = Serializer.Deserialize<CpuTime>(stream);
-                    if (cpuTime != null)
-                    {
-                        var series = ServiceSeries.FirstOrDefault(x => x.Name == cpuTime.ServiceName);
-                        if (series != null)
-                        {
-                            Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTime}");
-                            ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
-                            values?.Add(new ObservableValue(cpuTime.Value));
-                        }
+                        Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTemp}");
+                        ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
+                        values?.Add(new ObservableValue(cpuTemp.Value));
                     }
                 }
             }
+            else if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU loading"))
+            {
+                var cpuTime = Serializer.Deserialize<CpuTime>(stream);
+                if (cpuTime != null)
+                {
+                    var series = ServiceSeries.FirstOrDefault(x => x.Name == cpuTime.ServiceName);
+                    if (series != null)
+                    {
+                        Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTime}");
+                        ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
+                        values?.Add(new ObservableValue(cpuTime.Value));
+                    }
+                }
+            }
+
             // Console.WriteLine($"+ Payload = {Encoding.UTF8.GetString(e.ApplicationMessage.Payload)}");
             //Console.WriteLine($"+ QoS = {args.ApplicationMessage.QualityOfServiceLevel}");
             //Console.WriteLine($"+ Retain = {args.ApplicationMessage.Retain}");
@@ -167,10 +166,9 @@ namespace ClientView.ViewModels
             {
                 if (resp.StatusCode == 200)
                 {
+                    Print($"Sucsess execution {resp.Body}");
                     if (CommandType.eEStablishConnect == resp.Type)
                     {
-                        Print(resp.Body);
-
                         AddUniqueMeasurement(CoreTempSeries, "CPU Temperature");
 
                         if (CoreTempSeries.Last() is LineSeries<ObservableValue> newSer)
@@ -189,7 +187,7 @@ namespace ClientView.ViewModels
                 }
                 else
                 {
-                    Error(resp.Body);
+                    Error($"Failed execution {resp.Body}");
                 }
             }
         }
@@ -210,8 +208,8 @@ namespace ClientView.ViewModels
             srcSeries.Add(processSeries);
         }
 
-        public Client client { get; private set; }
+        private Client client_ { get; }
 
-        private string statusText_ = new string("");
+        private string statusText_ = new("");
     }
 }

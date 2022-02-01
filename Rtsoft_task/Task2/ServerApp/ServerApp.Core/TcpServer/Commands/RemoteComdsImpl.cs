@@ -1,10 +1,13 @@
-﻿using Newtonsoft.Json.Linq;
-using SysMonitor;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
+using Newtonsoft.Json.Linq;
+using SysMonitor;
+using systemd1.DBus;
+using Tmds.DBus;
 
-namespace ServerApp.Core.Commands
+namespace ServerApp.Core.TcpServer.Commands
 {
     public class RemoteRunProcCmd : AbstractRemoteCmd
     {
@@ -27,13 +30,20 @@ namespace ServerApp.Core.Commands
                     CreateNoWindow = false,//if this is a terminal app, don't show it
                     WindowStyle = ProcessWindowStyle.Normal //if this is a terminal app, don't show it
                 });
-                p?.WaitForExit();
-                Console.WriteLine($"Invoked {this}");
-                return new Response(GetIdent(), 200, $"{this} has been executed");
+                
+                Thread.Sleep(1000); // sleep for one second
+
+                if (p?.Id > 0)
+                {
+                    Console.WriteLine($"Invoked {this}");
+                    return new Response(GetIdent(), 200, $"{name_}");
+                }
             } catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{this} hasn't been executed");
+                return new Response(GetIdent(), 204, $"{name_}");
             }
+            
+            return new Response(GetIdent(), 204, $"{name_}");
         }
     }
 
@@ -62,15 +72,14 @@ namespace ServerApp.Core.Commands
                     worker.Dispose();
                 }
 
-                return new Response(GetIdent(), 200, $"{this} has been executed");
+                return new Response(GetIdent(), 200, $"{name_}");
             }
             catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{this} hasn't been executed");
+                return new Response(GetIdent(), 204, $"{name_}");
             }
         }
     }
-
 
     public class RemoteRunDbusCmd : AbstractRemoteCmd
     {
@@ -98,24 +107,59 @@ namespace ServerApp.Core.Commands
                    Append("string:\"replace\"");
 
                 var runScript = sb.ToString();
-                ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = $"-c \"{runScript}\"", RedirectStandardOutput = true, UseShellExecute = false };
-                Process proc = new Process() { StartInfo = startInfo, };
-                Console.WriteLine($"Invoked {this}");
-              
-                if (proc.Start())
+                if (Utils.ExecuteScript(out _, runScript))
                 {
-                    proc.WaitForExit();
-                    SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, name_);
-                    return new Response(GetIdent(), 200, $"{this} has been executed");
+                    Thread.Sleep(1000); // sleep for one second
+                    if (Utils.GetProcIdByServiceName(out _,name_))
+                    {
+                        SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, name_);
+                        return new Response(GetIdent(), 200, $"{name_}");
+                    }
                 }
             }
             catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{this} hasn't been executed");
+                return new Response(GetIdent(), 204, $"{name_}");
             }
-
-            return new Response(GetIdent(), 204, $"{this} hasn't been executed");
+            
+            return new Response(GetIdent(), 204, $"{name_}");
         }
+    }
+
+
+    public class RemoteRunTmdsDbusCmd : RemoteRunDbusCmd
+    {
+        public RemoteRunTmdsDbusCmd(string name, string args) : base(name, args)
+        {
+        }
+
+        public override Response Execute()
+        {
+            try
+            {
+                var systemConnection = Connection.System; //sys bus
+
+                var systemd1Path = new ObjectPath("/org/freedesktop/systemd1");
+                var networkManager = systemConnection.CreateProxy<IManager>("org.freedesktop.systemd1",
+                    systemd1Path);
+
+                var result = networkManager.StartUnitAsync(name_, "replace");
+                result.Wait();
+                
+                if (result.IsCompletedSuccessfully)
+                {
+                    SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, name_);
+                    return new Response(GetIdent(), 200, $"{name_}");
+                }
+            }
+            catch (Exception)
+            {
+                return new Response(GetIdent(), 204, $"{name_}");
+            }
+            
+            return new Response(GetIdent(), 204, $"{name_}");
+        }
+        
     }
 
     public class RemoteStopDbusCmd : AbstractRemoteCmd
@@ -131,6 +175,9 @@ namespace ServerApp.Core.Commands
             //echo 27051989 | sudo -S dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager.StopUnit string:"foo-daemon.service" string:"fail"
             try
             {
+                 if (!Utils.GetProcIdByServiceName(out _,name_))
+                     return new Response(GetIdent(), 204, $"{name_}");
+                
                 StringBuilder sb = new StringBuilder();
                 sb.Append($"echo {args_} | ").
                    Append("sudo -S dbus-send ").
@@ -144,24 +191,55 @@ namespace ServerApp.Core.Commands
                    Append("string:\"fail\"");
 
                 var stopScript = sb.ToString();
-                ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = $"-c \"{stopScript}\"", RedirectStandardOutput = true, UseShellExecute = false };
-                Process proc = new Process() { StartInfo = startInfo, };
-                Console.WriteLine($"Invoked command {this}");
 
-                SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, args_);
-
-                if (proc.Start())
+                if (Utils.ExecuteScript(out _, stopScript))
                 {
-                    proc.WaitForExit();
-                    return new Response(GetIdent(), 200, $"{this} has been executed");
+                    Thread.Sleep(1000); // sleep for one second
+                    SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, name_);
+                    Console.WriteLine($"Invoked command {this}");
+                    return new Response(GetIdent(), 200, $"{name_}");
                 }
             }
             catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{this} hasn't been executed");
+                return new Response(GetIdent(), 204, $"{name_}");
             }
+            
+            return new Response(GetIdent(), 204, $"{name_}");
+        }
+    }
 
-            return new Response(GetIdent(), 204, $"{this} hasn't been executed");
+
+    public class RemoteStopTmdsDbusCmd : RemoteRunDbusCmd
+    {
+        public RemoteStopTmdsDbusCmd(string name, string args) : base(name, args)
+        {
+        }
+
+        public override Response Execute()
+        {
+            try
+            {
+                var systemConnection = Connection.System; //sys bus
+
+                var systemd1Path = new ObjectPath("/org/freedesktop/systemd1");
+                var networkManager = systemConnection.CreateProxy<IManager>("org.freedesktop.systemd1",
+                    systemd1Path);
+
+                var result = networkManager.StopUnitAsync(name_, "fail");
+                result.Wait();
+                if (result.IsCompletedSuccessfully)
+                {
+                    SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, name_);
+                    return new Response(GetIdent(), 200, $"{name_}");
+                }
+            }
+            catch (Exception)
+            {
+                return new Response(GetIdent(), 204, $"{name_}");
+            }
+            
+            return new Response(GetIdent(), 204, $"{name_}");
         }
     }
 
@@ -178,11 +256,8 @@ namespace ServerApp.Core.Commands
             {
                 case CommandType.eRunProc: return new RemoteRunProcCmd(cmd, args).Execute();
                 case CommandType.eStopProc: return new RemoteStopProcCmd(cmd, args).Execute();
-                case CommandType.eRunDbus: return new RemoteRunDbusCmd(cmd, args).Execute();
-                case CommandType.eStopDbus: return new RemoteStopDbusCmd(cmd, args).Execute();
-               
-                default:
-                    break;
+                case CommandType.eRunDbus: return new RemoteRunTmdsDbusCmd(cmd, args).Execute();
+                case CommandType.eStopDbus: return new RemoteStopTmdsDbusCmd(cmd, args).Execute();
             }
 
             return new Response(CommandType.eUndef, 204, "Undefined command type");

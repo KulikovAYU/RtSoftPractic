@@ -8,5 +8,7 @@ namespace SysMonitor.Devices
         DevidceType Type { get;}
         string GetTopicName();
         string GetDescription();
+        
+        string GetServiceName();
     }
 }

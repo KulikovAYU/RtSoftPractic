@@ -26,11 +26,11 @@ namespace SysMonitor.Devices
         }
     }
 
-    class MqqtCPUServiceMonitor : IMqqtMessageSender
+    class MqqtCpuServiceMonitor : IMqqtMessageSender
     {
-        private CpuTime cpuTime_ = new CpuTime();
+        private readonly CpuTime cpuTime_ = new CpuTime();
 
-        public MqqtCPUServiceMonitor(int procId, string serviceName)
+        public MqqtCpuServiceMonitor(int procId, string serviceName)
         {
             cpuTime_.Id = procId;
             cpuTime_.ServiceName = serviceName;
@@ -42,23 +42,20 @@ namespace SysMonitor.Devices
             cpuTime_.TimePoint = DateTime.Now;
             cpuTime_.Value = 0.0f;
 
-            float fValue;
-            if (Utils.GetCPULoadingPercentage(out fValue, cpuTime_.Id))
+            if (Utils.GetCpuLoadingPercentage(out var fValue, cpuTime_.Id))
                 cpuTime_.Value = fValue;
 
-            using (MemoryStream stream = new MemoryStream())
-            {
-                Serializer.Serialize(stream, cpuTime_);
+            using var stream = new MemoryStream();
+            Serializer.Serialize(stream, cpuTime_);
 
-                var cpuLoadingProtoMsg = new MqttApplicationMessageBuilder()
-                        .WithTopic(GetTopicName())
-                        .WithPayload(stream.ToArray())
-                        .WithExactlyOnceQoS()
-                        .WithRetainFlag()
-                        .Build();
+            var cpuLoadingProtoMsg = new MqttApplicationMessageBuilder()
+                .WithTopic(GetTopicName())
+                .WithPayload(stream.ToArray())
+                .WithExactlyOnceQoS()
+                .WithRetainFlag()
+                .Build();
 
-                return cpuLoadingProtoMsg;
-            }
+            return cpuLoadingProtoMsg;
         }
 
         public DevidceType Type => DevidceType.eCPUMonitor;
@@ -66,5 +63,6 @@ namespace SysMonitor.Devices
         public string GetTopicName() => "RemoteSrvrData/CPU loading";
 
         public string GetDescription() => $"{GetTopicName()}; {cpuTime_}";
+        public string GetServiceName() => cpuTime_.ServiceName;
     }
 }

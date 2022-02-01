@@ -11,13 +11,13 @@ namespace ClientApp
 {
     public class Client
     {
-        public bool IsConnected { get; private set; } = false;
+        public bool IsConnected { get; private set; }
         private StreamReader sReader_;
         private StreamWriter sWriter_;
         private readonly TcpClient client_;
         private ConnectionPref pref_;
         private IMqttClient clientMqtt_;
-        IEventBus eventBus_;
+        private readonly IEventBus eventBus_;
 
         public Client(IEventBus eventBus = null)
         {
@@ -42,6 +42,7 @@ namespace ClientApp
                 }
                 catch (Exception)
                 {
+                    // ignored
                 }
             });
         }
@@ -56,17 +57,20 @@ namespace ClientApp
                     {
                         if (client_?.Connected == true)
                         {
-                            // string sDataIncomming = sReader_.ReadLine();
                             string sDataIncomming = await sReader_.ReadLineAsync();
 
                             eventBus_.OnResponse(sDataIncomming);
 
                             if (sDataIncomming == null)
+                            {
                                 client_.Close();
+                                return;
+                            }
                         }
                     }
                     catch (Exception)
                     {
+                        // ignored
                     }
 
                     Task.Delay(10).Wait();
@@ -76,7 +80,7 @@ namespace ClientApp
 
         public async Task EstablishConnectionAsync(ConnectionPref pref)
         {
-            if (!IsConnected)
+            if (!client_.Connected)
             {
                 try
                 {
@@ -89,8 +93,8 @@ namespace ClientApp
                     sReader_ = new StreamReader(stream, Encoding.ASCII);
                     sWriter_ = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true };
 
-                    sWriter_.WriteLine(pref_.UserName);
-                    sWriter_.WriteLine(pref_.Id);
+                    await sWriter_.WriteLineAsync(pref_.UserName);
+                    await sWriter_.WriteLineAsync(pref_.Id.ToString());
 
                     EstablishMqttConnection(pref_);
 
@@ -99,7 +103,7 @@ namespace ClientApp
                 }
                 catch (Exception ex)
                 {
-                    eventBus_.Error(ex.Message);
+                    eventBus_?.Error(ex.Message);
                 }
             }
            
@@ -123,7 +127,7 @@ namespace ClientApp
                 eventBus_?.Print("Connected successfully with MQTT Brokers.");
 
                 //Subscribe to topic
-                clientMqtt_.SubscribeAsync(new TopicFilterBuilder().WithTopic("RemoteSrvrData/#").Build()).Wait();
+                clientMqtt_.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("RemoteSrvrData/#").Build()).Wait();
 
             });
             clientMqtt_.UseDisconnectedHandler(e =>

@@ -1,11 +1,12 @@
 ﻿using ServerApp.Core.Mqtt;
+using ServerApp.Core.TcpServer;
 using SysMonitor;
 
 namespace ServerApp.Core
 {
     public static class CoreEntryPoint
     {
-        public static TcpServer commandTcpSrv { get; private set; }
+        public static TcpServer.TcpServer commandTcpSrv { get; private set; }
         public static MqttBrocker mqqtBrocker { get; private set; }
 
 
@@ -15,17 +16,15 @@ namespace ServerApp.Core
 
             #region TCP Server configuration
 
-            commandTcpSrv = new TcpServer(TcpServer.GetDefaultPrefs(), eventBus);
+            commandTcpSrv = new TcpServer.TcpServer(TcpServer.TcpServer.GetDefaultPrefs(), eventBus);
             commandTcpSrv.Start();
 
             #endregion
 
 
             #region MQTT brocker configuration
-
             mqqtBrocker = new MqttBrocker(MqttBrocker.GetDefaultPrefs(), eventBus);
             mqqtBrocker.Start();
-
             #endregion
 
 

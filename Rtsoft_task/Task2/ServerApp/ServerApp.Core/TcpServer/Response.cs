@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
-using ServerApp.Core.Commands;
+using ServerApp.Core.TcpServer.Commands;
 
-namespace ServerApp.Core
+namespace ServerApp.Core.TcpServer
 {
     public class Response
     {
@@ -16,7 +16,7 @@ namespace ServerApp.Core
         public int StatusCode { get; set; }
         public string Body { get; set; }
 
-        public string ToJSON()
+        public string ToJson()
         {
             return JsonConvert.SerializeObject(this);
         }

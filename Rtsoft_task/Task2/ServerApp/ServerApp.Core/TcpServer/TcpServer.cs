@@ -1,12 +1,12 @@
-﻿using ServerApp.Core.Commands;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using ServerApp.Core.TcpServer.Commands;
 
-namespace ServerApp.Core
+namespace ServerApp.Core.TcpServer
 {
     public class TcpServer
     {
@@ -77,29 +77,35 @@ namespace ServerApp.Core
                           StreamWriter sWriter = new StreamWriter(client.ClientData.GetStream(), Encoding.ASCII) { AutoFlush = true };
 
                           client.Name = await sReader.ReadLineAsync();
-                          client.Id = Guid.Parse(await sReader.ReadLineAsync());
+                          string guid = await sReader.ReadLineAsync();
+                          Guid.Parse(guid);
 
                           if (client.ClientData.Connected)
                           {
                               eventBus_?.Print($"Client {client.Name} has join at server!");
-                              await sWriter.WriteLineAsync(new Response(CommandType.eEStablishConnect, 200, $"Hello {client.Name} from server =)").ToJSON());
+                              await sWriter.WriteLineAsync(new Response(CommandType.eEStablishConnect, 200, $"Hello {client.Name} from server =)").ToJson());
                           }
 
                           //ok. if we connected wait message from server
                           while (client.ClientData.Connected)
                           {
-                              //send back response
-                             
-                              // reads from client stream
-                              string sData = await sReader.ReadLineAsync();
-                              if (sData == null)
-                                  break;
+                              try
+                              {
+                                  // reads from client stream
+                                  string sData = await sReader.ReadLineAsync();
+                                  if (sData == null)
+                                      break;
 
-                              eventBus_?.Print($"Recieved Data {sData}");
+                                  eventBus_?.Print($"Recieved Data {sData}");
 
-                              //execute command
-                              var response = CommandExecutor.FromJson(sData);
-                              await sWriter.WriteLineAsync(response.ToJSON());
+                                  //execute command
+                                  var response = CommandExecutor.FromJson(sData);
+                                  await sWriter.WriteLineAsync(response.ToJson());
+                              }
+                              catch (Exception)
+                              {
+                                  // ignored
+                              }
                           }
 
                           client.ClientData.Close();

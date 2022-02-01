@@ -2,6 +2,7 @@
 using MQTTnet;
 using MQTTnet.Server;
 using MQTTnet.Protocol;
+using ServerApp.Core.TcpServer;
 
 namespace ServerApp.Core.Mqtt
 {
