@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using ServerApp.Core.TcpServer.Commands;
+using System;
 
 namespace ServerApp.Core.TcpServer
 {
@@ -12,13 +13,23 @@ namespace ServerApp.Core.TcpServer
             Body = body;
         }
 
-        public CommandType Type { get; set; }
-        public int StatusCode { get; set; }
-        public string Body { get; set; }
+        public CommandType Type { get; private set; }
+        public int StatusCode { get; private set; }
+        public string Body { get; private set; }
+     
 
         public string ToJson()
         {
             return JsonConvert.SerializeObject(this);
         }
+    }
+
+    class CommandResponse : Response 
+    {
+        public CommandResponse(Guid guid ,CommandType type, int statusCode, string body = "") : base(type, statusCode, body)
+        {
+            Guid = guid;
+        }
+        public Guid Guid { get; private set; } = Guid.Empty;
     }
 }

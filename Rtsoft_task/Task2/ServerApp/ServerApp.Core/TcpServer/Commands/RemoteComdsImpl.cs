@@ -11,7 +11,7 @@ namespace ServerApp.Core.TcpServer.Commands
 {
     public class RemoteRunProcCmd : AbstractRemoteCmd
     {
-        public RemoteRunProcCmd(string name, string args) : base(name, args)
+        public RemoteRunProcCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
         }
 
@@ -36,21 +36,21 @@ namespace ServerApp.Core.TcpServer.Commands
                 if (p?.Id > 0)
                 {
                     Console.WriteLine($"Invoked {this}");
-                    return new Response(GetIdent(), 200, $"{name_}");
+                    return new CommandResponse(guid_,GetIdent(), 200, $"{name_}");
                 }
             } catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{name_}");
+                return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
             }
             
-            return new Response(GetIdent(), 204, $"{name_}");
+            return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
         }
     }
 
     public class RemoteStopProcCmd : AbstractRemoteCmd
     {
 
-        public RemoteStopProcCmd(string name, string args) : base(name, args)
+        public RemoteStopProcCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
         }
 
@@ -62,7 +62,7 @@ namespace ServerApp.Core.TcpServer.Commands
             {
                 var workers = Process.GetProcessesByName(name_);
                 if(workers.Length == 0)
-                    return new Response(GetIdent(), 204, $"Remote host doesn't contains {this}");
+                    return new CommandResponse(guid_, GetIdent(), 204, $"Remote host doesn't contains {this}");
 
                 foreach (Process worker in workers)
                 {
@@ -72,18 +72,18 @@ namespace ServerApp.Core.TcpServer.Commands
                     worker.Dispose();
                 }
 
-                return new Response(GetIdent(), 200, $"{name_}");
+                return new CommandResponse(guid_, GetIdent(), 200, $"{name_}");
             }
             catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{name_}");
+                return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
             }
         }
     }
 
     public class RemoteRunDbusCmd : AbstractRemoteCmd
     {
-        public RemoteRunDbusCmd(string name, string args) : base(name, args)
+        public RemoteRunDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
         }
 
@@ -113,23 +113,23 @@ namespace ServerApp.Core.TcpServer.Commands
                     if (Utils.GetProcIdByServiceName(out _,name_))
                     {
                         SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, name_);
-                        return new Response(GetIdent(), 200, $"{name_}");
+                        return new CommandResponse(guid_, GetIdent(), 200, $"{name_}");
                     }
                 }
             }
             catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{name_}");
+                return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
             }
             
-            return new Response(GetIdent(), 204, $"{name_}");
+            return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
         }
     }
 
 
     public class RemoteRunTmdsDbusCmd : RemoteRunDbusCmd
     {
-        public RemoteRunTmdsDbusCmd(string name, string args) : base(name, args)
+        public RemoteRunTmdsDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
         }
 
@@ -149,22 +149,22 @@ namespace ServerApp.Core.TcpServer.Commands
                 if (result.IsCompletedSuccessfully)
                 {
                     SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, name_);
-                    return new Response(GetIdent(), 200, $"{name_}");
+                    return new CommandResponse(guid_, GetIdent(), 200, $"{name_}");
                 }
             }
             catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{name_}");
+                return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
             }
             
-            return new Response(GetIdent(), 204, $"{name_}");
+            return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
         }
         
     }
 
     public class RemoteStopDbusCmd : AbstractRemoteCmd
     {
-        public RemoteStopDbusCmd(string name, string args) : base(name, args)
+        public RemoteStopDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
         }
 
@@ -176,7 +176,7 @@ namespace ServerApp.Core.TcpServer.Commands
             try
             {
                  if (!Utils.GetProcIdByServiceName(out _,name_))
-                     return new Response(GetIdent(), 204, $"{name_}");
+                     return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
                 
                 StringBuilder sb = new StringBuilder();
                 sb.Append($"echo {args_} | ").
@@ -197,22 +197,22 @@ namespace ServerApp.Core.TcpServer.Commands
                     Thread.Sleep(1000); // sleep for one second
                     SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, name_);
                     Console.WriteLine($"Invoked command {this}");
-                    return new Response(GetIdent(), 200, $"{name_}");
+                    return new CommandResponse(guid_, GetIdent(), 200, $"{name_}");
                 }
             }
             catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{name_}");
+                return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
             }
             
-            return new Response(GetIdent(), 204, $"{name_}");
+            return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
         }
     }
 
 
     public class RemoteStopTmdsDbusCmd : RemoteRunDbusCmd
     {
-        public RemoteStopTmdsDbusCmd(string name, string args) : base(name, args)
+        public RemoteStopTmdsDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
         }
 
@@ -231,15 +231,15 @@ namespace ServerApp.Core.TcpServer.Commands
                 if (result.IsCompletedSuccessfully)
                 {
                     SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, name_);
-                    return new Response(GetIdent(), 200, $"{name_}");
+                    return new CommandResponse(guid_, GetIdent(), 200, $"{name_}");
                 }
             }
             catch (Exception)
             {
-                return new Response(GetIdent(), 204, $"{name_}");
+                return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
             }
             
-            return new Response(GetIdent(), 204, $"{name_}");
+            return new CommandResponse(guid_, GetIdent(), 204, $"{name_}");
         }
     }
 
@@ -248,19 +248,20 @@ namespace ServerApp.Core.TcpServer.Commands
         public static Response FromJson(string cmdJson)
         {
             JObject jObject = JObject.Parse(cmdJson);
+            Guid guid = Guid.Parse(jObject["Guid"].ToString());
             CommandType cmdType = (CommandType)int.Parse(jObject["Type"]?.ToString() ?? string.Empty);
             string cmd = jObject["Name"]?.ToString();
             string args = jObject["Args"]?.ToString();
 
             switch (cmdType)
             {
-                case CommandType.eRunProc: return new RemoteRunProcCmd(cmd, args).Execute();
-                case CommandType.eStopProc: return new RemoteStopProcCmd(cmd, args).Execute();
-                case CommandType.eRunDbus: return new RemoteRunTmdsDbusCmd(cmd, args).Execute();
-                case CommandType.eStopDbus: return new RemoteStopTmdsDbusCmd(cmd, args).Execute();
+                case CommandType.eRunProc: return new RemoteRunProcCmd(guid, cmd, args).Execute();
+                case CommandType.eStopProc: return new RemoteStopProcCmd(guid, cmd, args).Execute();
+                case CommandType.eRunDbus: return new RemoteRunTmdsDbusCmd(guid, cmd, args).Execute();
+                case CommandType.eStopDbus: return new RemoteStopTmdsDbusCmd(guid, cmd, args).Execute();
             }
 
-            return new Response(CommandType.eUndef, 204, "Undefined command type");
+            return new CommandResponse(guid, CommandType.eUndef, 204, "Undefined command type");
         }
     }
 }

@@ -1,14 +1,18 @@
-﻿namespace ServerApp.Core.TcpServer.Commands
+﻿using System;
+
+namespace ServerApp.Core.TcpServer.Commands
 {
     public enum CommandType { eUndef = -1, eEStablishConnect, eRunProc, eStopProc, eRunDbus, eStopDbus }
 
     public abstract class AbstractRemoteCmd
     {
+        protected readonly Guid guid_;
         protected readonly string name_;
         protected readonly string args_;
 
-        protected AbstractRemoteCmd(string name, string args)
+        protected AbstractRemoteCmd(Guid guid,string name, string args)
         {
+            guid_ = guid;
             name_ = name;
             args_ = args;
         }

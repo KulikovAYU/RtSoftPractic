@@ -51,7 +51,7 @@ namespace SysMonitor.Devices
             var cpuLoadingProtoMsg = new MqttApplicationMessageBuilder()
                 .WithTopic(GetTopicName())
                 .WithPayload(stream.ToArray())
-                .WithExactlyOnceQoS()
+                .WithAtMostOnceQoS()
                 .WithRetainFlag()
                 .Build();
 

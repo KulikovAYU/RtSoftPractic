@@ -38,7 +38,7 @@ namespace SysMonitor.Devices
             var cpuTempProtoMsg = new MqttApplicationMessageBuilder()
                 .WithTopic(GetTopicName())
                 .WithPayload(stream.ToArray())
-                .WithExactlyOnceQoS()
+                .WithAtMostOnceQoS()
                 .WithRetainFlag()
                 .Build();
 

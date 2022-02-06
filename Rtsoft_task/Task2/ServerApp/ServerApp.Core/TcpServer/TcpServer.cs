@@ -38,7 +38,6 @@ namespace ServerApp.Core.TcpServer
         {
            // CPUServiceMonitor.Calc("");
             EstablishConnection();
-            Task.Run(() => { CheckDisconnectedClients(); });
             Task.Run(async () => { await listenClientsAsync(); });
         }
 
@@ -73,8 +72,8 @@ namespace ServerApp.Core.TcpServer
                     _ = Task.Factory.StartNew(async () =>
                       {
 
-                          StreamReader sReader = new StreamReader(client.ClientData.GetStream(), Encoding.ASCII);
-                          StreamWriter sWriter = new StreamWriter(client.ClientData.GetStream(), Encoding.ASCII) { AutoFlush = true };
+                          using var sReader = new StreamReader(client.ClientData.GetStream(), Encoding.ASCII);
+                          using var sWriter = new StreamWriter(client.ClientData.GetStream(), Encoding.ASCII) { AutoFlush = true };
 
                           client.Name = await sReader.ReadLineAsync();
                           string guid = await sReader.ReadLineAsync();
@@ -83,6 +82,7 @@ namespace ServerApp.Core.TcpServer
                           if (client.ClientData.Connected)
                           {
                               eventBus_?.Print($"Client {client.Name} has join at server!");
+                              var test = new Response(CommandType.eEStablishConnect, 200, $"Hello {client.Name} from server =)").ToJson();
                               await sWriter.WriteLineAsync(new Response(CommandType.eEStablishConnect, 200, $"Hello {client.Name} from server =)").ToJson());
                           }
 
@@ -108,6 +108,8 @@ namespace ServerApp.Core.TcpServer
                               }
                           }
 
+                          eventBus_?.Print($"Client {client} has left from server");
+                          client.ClientData.GetStream().Close();
                           client.ClientData.Close();
                           clients_.Remove(client);
                       });
@@ -132,6 +134,7 @@ namespace ServerApp.Core.TcpServer
                         if (!cli.ClientData.Connected)
                         {
                             eventBus_?.Print($"Client {cli} has left from server");
+                            clients_.Remove(cli);
                             return true;
                         }
 
