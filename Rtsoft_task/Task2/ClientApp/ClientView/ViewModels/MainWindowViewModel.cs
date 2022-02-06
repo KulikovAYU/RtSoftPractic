@@ -1,4 +1,5 @@
-using ClientApp;
+using System;
+using ClientApp.Models;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
@@ -6,6 +7,7 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using MQTTnet;
 using ProtoBuf;
 using ReactiveUI;
+using ReactiveUI.Fody.Helpers;
 using SkiaSharp;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,22 +15,48 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using ClientApp.Base;
+using ClientApp.Client;
+using DynamicData.Binding;
+
 
 namespace ClientView.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase, IEventBus
     {
+        #region Properties
         public ConnectionPref Pref { get; set; }
-
         public List<Axis> XAxes { get; set; }
 
-        public ObservableCollection<ISeries> ServiceSeries { get; set; } = new ObservableCollection<ISeries>();
+        public ObservableCollection<ISeries> ServiceSeries { get; set; } = new();
+        public ObservableCollection<ISeries> CoreTempSeries { get; set; } = new();
+        public ObservableCollection<AbstractItem> ActiveServices { get; set; } = new();
 
-        public ObservableCollection<ISeries> CoreTempSeries { get; set; } = new ObservableCollection<ISeries>();
+        [Reactive] public string RemoteProcessName { get; set; } = new("vlc");
+        [Reactive] public string RemoteProcessArgs { get; set; } = new("");
+
+        [Reactive] public string RemoteDbusServiceName { get; set; } = new("foo-daemon.service");
+        [Reactive] public string RemoteSudoPwd { get; set; } = new("");
+
+        [Reactive] public string StatusText { get; private set;} = new("");
+
+        [Reactive] public Client Client { get; private set; }
+        
+        #endregion
+
+        #region Constructor
 
         public MainWindowViewModel()
         {
-            client_ = new Client(this);
+            Client = new Client(this);
+
+            Client.WhenAnyPropertyChanged()
+                .Subscribe(_ => {
+                    this.RaisePropertyChanged(nameof(RunStopCommand));
+                    this.RaisePropertyChanged(nameof(EstablishConnectCommand));
+                    this.RaisePropertyChanged(nameof(BreakConnectCommand));
+                });
+            
             Pref = new ConnectionPref()
             {
                 HostNameOrAdress = "127.0.0.1",
@@ -55,59 +83,91 @@ namespace ClientView.ViewModels
                     SeparatorsPaint = new SolidColorPaint(SKColors.LightGray, 2)
                 }
             };
+               
         }
 
-        public string StatusText
+        #endregion
+
+        #region Connect/Disconnect commands
+
+        public ReactiveCommand<Unit, Task> EstablishConnectCommand =>ReactiveCommand.Create(async () =>
         {
-            get => statusText_; set
+            await Client.EstablishConnectionAsync(Pref);
+          
+        },  this.WhenAnyValue(vm=> vm.Client.IsConnected, (isConnected)=>!isConnected));
+        
+        public ReactiveCommand<Unit, Unit> BreakConnectCommand => ReactiveCommand.Create(() =>
+        {
+            Client.DisconnectCommand();
+        }, Client.WhenAnyValue(client=> client.IsConnected));
+        
+        #endregion
+     
+        #region Invoke commands (Run/Stop Process, Run/Stop Dbus)
+        
+        public ReactiveCommand<AbstractItem, Unit> RunStopCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
+        {
+            if (itm.Status == State.Stopped)
             {
-                statusText_ = value;
-                this.RaisePropertyChanged();
+                Client.SendMessage(itm.ActivateCmd.ToJSON().ToString());
             }
-        }
+            else if (itm.Status == State.Started)
+            {
+                Client.SendMessage(itm.DeactivateCmd.ToJSON());
+            }
+        }, Client.WhenAnyValue(client => client.IsConnected));
+        
+        #endregion
 
-        public string RemoteProcessName { get; set; } = new string("vlc");
-        public string RemoteProcessArgs { get; set; } = new string("");
+        #region Command to run/stop remote process
 
-        public string RemoteDbusServiceName { get; set; } = new string("foo-daemon.service");
-        public string RemoteSudoPwd { get; set; } = new string("");
+        // public ReactiveCommand<AbstractItem, Unit> RunStopRemoteProcessCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
+        // {
+        //     if (itm.Status == State.Stopped)
+        //     {
+        //         Client.SendMessage(itm.ActivateCmd.ToJSON().ToString());
+        //     }
+        //     else if (itm.Status == State.Started)
+        //     {
+        //         Client.SendMessage(itm.DeactivateCmd.ToJSON());
+        //     }
+        // }, Client.WhenAnyValue(clnt => clnt.IsConnected));
 
-        public ReactiveCommand<Unit, Task> EstablishConnectCommand => ReactiveCommand.Create(async () =>
+        #endregion
+
+        #region Command to runn/stop remote d bus service
+        // public ReactiveCommand<AbstractItem, Unit> RunStopDbusRemoteProcessCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
+        // {
+        //     if (itm.Status == State.Stopped)
+        //     {
+        //         Client.SendMessage(itm.ActivateCmd.ToJSON());
+        //     }
+        //     else if (itm.Status == State.Started)
+        //     {
+        //         Client.SendMessage(itm.DeactivateCmd.ToJSON());
+        //     }
+        // }, Client.WhenAnyValue(clnt => clnt.IsConnected));
+
+        #endregion
+
+
+        #region Command which creates executors and remove theirs
+        
+        public ReactiveCommand<string, Unit> NewExecutorCommand => ReactiveCommand.Create<string>((cmdName) =>
         {
-            await client_.EstablishConnectionAsync(Pref);
-
-            this.RaisePropertyChanged("RunRemoteProcessCommand");
-            this.RaisePropertyChanged("StopRemoteProcessCommand");
-            this.RaisePropertyChanged("RunDbusRemoteProcessCommand");
-            this.RaisePropertyChanged("StopDbusRemoteProcessCommand");
+            var newCmd = ServiceFactory.Create(cmdName);
+            if (newCmd != null)
+                ActiveServices.Add(newCmd);
         });
-
-
-        public ReactiveCommand<Unit, Unit> RunRemoteProcessCommand => ReactiveCommand.Create(() =>
+        
+        public ReactiveCommand<AbstractItem, Unit> RemoteExecutorCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
         {
-            RemoteProcCommand runremoteProcCmd = new RemoteProcCommand(CommandType.eRunProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
-            client_.SendMessage(runremoteProcCmd.ToJSON());
-        }, this.WhenAnyValue(x => x.client_.IsConnected));
-
-
-        public ReactiveCommand<Unit, Unit> StopRemoteProcessCommand => ReactiveCommand.Create(() =>
-        {
-            RemoteProcCommand stopremoteProcCmd = new RemoteProcCommand(CommandType.eStopProc) { Name = RemoteProcessName, Args = RemoteProcessArgs };
-            client_.SendMessage(stopremoteProcCmd.ToJSON());
-        }, this.WhenAnyValue(x => x.client_.IsConnected));
-
-        public ReactiveCommand<Unit, Unit> RunDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
-        {
-            RemoteProcCommand rundbusCmd = new RemoteProcCommand(CommandType.eRunDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
-            client_.SendMessage(rundbusCmd.ToJSON());
-        }, this.WhenAnyValue(x => x.client_.IsConnected));
-
-        public ReactiveCommand<Unit, Unit> StopDbusRemoteProcessCommand => ReactiveCommand.Create(() =>
-        {
-            RemoteProcCommand stopDbusCmd = new RemoteProcCommand(CommandType.eStopDbus) { Name = RemoteDbusServiceName, Args = RemoteSudoPwd };
-            client_.SendMessage(stopDbusCmd.ToJSON());
-        }, this.WhenAnyValue(x => x.client_.IsConnected));
-
+            //TODO: may be stopped
+            ActiveServices.Remove(itm);
+        });
+        
+        #endregion
+      
         public void Print(string message)
         {
             StatusText += $"[INFO] {message}\n";
@@ -118,37 +178,39 @@ namespace ClientView.ViewModels
             StatusText += $"[ERROR] {message}\n";
         }
 
-        public void OnMqqtEvent(MqttApplicationMessageReceivedEventArgs args)
+        public async Task OnMqqtEvent(MqttApplicationMessageReceivedEventArgs args)
         {
-            using var stream = new MemoryStream(args.ApplicationMessage.Payload);
-            if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU temp"))
+            await Task.Run(() =>
             {
-                var cpuTemp = Serializer.Deserialize<CpuTemp>(stream);
-                if (cpuTemp != null)
+                using var stream = new MemoryStream(args.ApplicationMessage.Payload);
+                if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU temp"))
                 {
-                    var series = CoreTempSeries.FirstOrDefault();
-                    if (series != null)
+                    var cpuTemp = Serializer.Deserialize<CpuTemp>(stream);
+                    if (cpuTemp != null)
                     {
+                        var series = CoreTempSeries.FirstOrDefault();
+
                         Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTemp}");
-                        ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
+                        ObservableCollection<ObservableValue>? values = series?.Values as ObservableCollection<ObservableValue>;
                         values?.Add(new ObservableValue(cpuTemp.Value));
                     }
                 }
-            }
-            else if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU loading"))
-            {
-                var cpuTime = Serializer.Deserialize<CpuTime>(stream);
-                if (cpuTime != null)
+                else if (args.ApplicationMessage.Topic.Equals("RemoteSrvrData/CPU loading"))
                 {
-                    var series = ServiceSeries.FirstOrDefault(x => x.Name == cpuTime.ServiceName);
-                    if (series != null)
+                    var cpuTime = Serializer.Deserialize<CpuTime>(stream);
+                    if (cpuTime != null)
                     {
-                        Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTime}");
-                        ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
-                        values?.Add(new ObservableValue(cpuTime.Value));
+                        var series = ServiceSeries.FirstOrDefault(x => x.Name == cpuTime.ServiceName);
+                        if (series != null)
+                        {
+                            Print($"[MQTT] Topic=>{args.ApplicationMessage.Topic}; {cpuTime}");
+                            ObservableCollection<ObservableValue>? values = series.Values as ObservableCollection<ObservableValue>;
+                            values?.Add(new ObservableValue(cpuTime.Value));
+                        }
                     }
                 }
-            }
+            });
+            
 
             // Console.WriteLine($"+ Payload = {Encoding.UTF8.GetString(e.ApplicationMessage.Payload)}");
             //Console.WriteLine($"+ QoS = {args.ApplicationMessage.QualityOfServiceLevel}");
@@ -167,22 +229,46 @@ namespace ClientView.ViewModels
                 if (resp.StatusCode == 200)
                 {
                     Print($"Sucsess execution {resp.Body}");
-                    if (CommandType.eEStablishConnect == resp.Type)
-                    {
-                        AddUniqueMeasurement(CoreTempSeries, "CPU Temperature");
 
-                        if (CoreTempSeries.Last() is LineSeries<ObservableValue> newSer)
-                        {
-                            var red = new SKColor(229, 57, 53);
-                            newSer.Stroke = new SolidColorPaint(red, 5);
-                            newSer.GeometrySize = 5;
-                            newSer.GeometryStroke = new SolidColorPaint(red, 2);
-                            newSer.LineSmoothness = 1;
-                        }
-                    }
-                    else if (CommandType.eRunDbus == resp.Type)
+                    switch (resp.Type)
                     {
-                        AddUniqueMeasurement(ServiceSeries, resp.Body);
+                        case CommandType.eEStablishConnect:
+                        {
+                            if (AddUniqueMeasurement(CoreTempSeries, "CPU Temperature"))
+                            {
+                                if (CoreTempSeries.Last() is LineSeries<ObservableValue> newSer)
+                                {
+                                    var red = new SKColor(229, 57, 53);
+                                    newSer.Stroke = new SolidColorPaint(red, 5);
+                                    newSer.GeometrySize = 5;
+                                    newSer.GeometryStroke = new SolidColorPaint(red, 2);
+                                    newSer.LineSmoothness = 1;
+                                }
+                            }
+
+                            break;
+                        }
+                        case CommandType.eRunDbus:
+                        {
+                            GetServiceByGuid(resp.Guid)?.Start();
+                            AddUniqueMeasurement(ServiceSeries, resp.Body);
+                            break;
+                        }
+                        case CommandType.eRunProc:
+                        {
+                            GetServiceByGuid(resp.Guid)?.Start();
+                            break;
+                        }
+                        case CommandType.eStopDbus:
+                        {
+                            GetServiceByGuid(resp.Guid)?.Stop();
+                            break;
+                        }
+                        case CommandType.eStopProc:
+                        {
+                            GetServiceByGuid(resp.Guid)?.Stop();
+                            break;
+                        }
                     }
                 }
                 else
@@ -192,10 +278,10 @@ namespace ClientView.ViewModels
             }
         }
 
-        void AddUniqueMeasurement(ObservableCollection<ISeries> srcSeries, string seriesName)
+        private bool AddUniqueMeasurement(ObservableCollection<ISeries> srcSeries, string seriesName)
         {
             if (srcSeries.FirstOrDefault(s => s.Name?.Equals(seriesName) == true) != null)
-                return;
+                return false;
             
             var processSeries = new LineSeries<ObservableValue>
             {
@@ -206,10 +292,10 @@ namespace ClientView.ViewModels
             };
 
             srcSeries.Add(processSeries);
+
+            return true;
         }
 
-        private Client client_ { get; }
-
-        private string statusText_ = new("");
+        private AbstractItem? GetServiceByGuid(Guid cmdGuid) => ActiveServices.FirstOrDefault(srv => srv.Guid.Equals(cmdGuid));
     }
 }

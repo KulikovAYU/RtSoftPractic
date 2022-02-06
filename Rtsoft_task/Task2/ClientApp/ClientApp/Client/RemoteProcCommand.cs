@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 
-namespace ClientApp
+namespace ClientApp.Client
 {
     public enum CommandType { eUndef = -1, eEStablishConnect, eRunProc, eStopProc, eRunDbus, eStopDbus }
 
@@ -17,6 +18,8 @@ namespace ClientApp
         public CommandType Type { get; set; }
         public string Name { get; set; }
         public string Args { get; set; }
+
+        public Guid Guid { get; private set; } = Guid.NewGuid();
 
         public string ToJSON() => JsonConvert.SerializeObject(this);
     }

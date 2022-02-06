@@ -1,7 +1,7 @@
-﻿using ProtoBuf;
-using System;
+﻿using System;
+using ProtoBuf;
 
-namespace ClientApp
+namespace ClientApp.Base
 {
     [ProtoContract]
     public class CpuTime

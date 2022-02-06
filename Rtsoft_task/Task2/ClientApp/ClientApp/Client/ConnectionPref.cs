@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ClientApp
+namespace ClientApp.Client
 {
     public class ConnectionPref
     {

@@ -1,6 +1,7 @@
-﻿using MQTTnet;
+﻿using System.Threading.Tasks;
+using MQTTnet;
 
-namespace ClientApp
+namespace ClientApp.Base
 {
     public interface IEventBus
     {
@@ -8,7 +9,7 @@ namespace ClientApp
 
         void Error(string message);
 
-        void OnMqqtEvent(MqttApplicationMessageReceivedEventArgs args);
+        Task OnMqqtEvent(MqttApplicationMessageReceivedEventArgs args);
 
         void OnResponse(string message);
     }

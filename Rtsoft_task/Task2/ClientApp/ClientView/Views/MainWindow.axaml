@@ -5,54 +5,159 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:model="using:ClientApp.Models"
+        xmlns:material="using:Material.Icons.Avalonia"
+        xmlns:valueConverters="using:ClientView.Infrastructure.ValueConverters"
         x:Class="ClientView.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="Client control panel">
 
-  <!--Create and inject data context on place-->
-  <Design.DataContext>
-    <vm:MainWindowViewModel/>
-  </Design.DataContext>
+    <!--Create and inject data context on place-->
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
 
-  <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="10">
-    <Grid>
-      <Grid.RowDefinitions>
-        <RowDefinition Height="60"/>
-        <RowDefinition Height="*"/>
-        <RowDefinition Height="50"/>
-        <RowDefinition Height="50"/>
-        <RowDefinition Height="*"/>
-      </Grid.RowDefinitions>
+    <Window.Resources>
+        <valueConverters:FilterOperationValueConverter x:Key="StatusLightningVc" />
+    </Window.Resources>
 
-      <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Center">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="20*"/>
-          <ColumnDefinition Width="20*"/>
-          <ColumnDefinition Width="20*"/>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="auto"/>
-        </Grid.ColumnDefinitions>
+    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="10">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="60" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <UniformGrid Rows="2" Columns="1" Grid.Column="0" Margin="10,0,10,0">
-          <Label HorizontalAlignment="Center" Content="IP" />
-          <TextBox Text="{Binding Pref.HostNameOrAdress}"/>
-        </UniformGrid>
+            <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="20*" />
+                    <ColumnDefinition Width="20*" />
+                    <ColumnDefinition Width="20*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
 
-        <UniformGrid Rows="2" Columns="1" Grid.Column="1" Margin="10,0,10,0">
-          <Label HorizontalAlignment="Center" Content="Port" />
-          <TextBox Text="{Binding Pref.PortNumber}"/>
-        </UniformGrid>
+                <UniformGrid Rows="2" Columns="1" Grid.Column="0" Margin="10,0,10,0">
+                    <Label HorizontalAlignment="Center" Content="IP" />
+                    <TextBox Text="{Binding Pref.HostNameOrAdress}" />
+                </UniformGrid>
 
-        <UniformGrid Rows="2" Columns="1" Grid.Column="2" Margin="10,0,10,0">
-          <Label HorizontalAlignment="Center" Content="User Name" />
-          <TextBox Text="{Binding Pref.UserName}"/>
-        </UniformGrid>
+                <UniformGrid Rows="2" Columns="1" Grid.Column="1" Margin="10,0,10,0">
+                    <Label HorizontalAlignment="Center" Content="Port" />
+                    <TextBox Text="{Binding Pref.PortNumber}" />
+                </UniformGrid>
 
-        <Button Content="Connect" Grid.Column="4" Command="{Binding EstablishConnectCommand} "></Button>
-      </Grid>
+                <UniformGrid Rows="2" Columns="1" Grid.Column="2" Margin="10,0,10,0">
+                    <Label HorizontalAlignment="Center" Content="User Name" />
+                    <TextBox Text="{Binding Pref.UserName}" />
+                </UniformGrid>
 
-      <TextBox Grid.Row="1" Margin="0,10,0,10" TextAlignment="Left" Text="{Binding Path=StatusText, Mode= TwoWay}"/>
-      <Grid Grid.Row="2" Margin="0,10,0,10">
+                <Button Content="Connect" Grid.Column="4" Command="{Binding EstablishConnectCommand} " />
+                <Button Content="Disconnect" Grid.Column="5" Command="{Binding BreakConnectCommand} " />
+            </Grid>
+
+            <ListBox Cursor="Hand" Background="Transparent" Grid.Row="1" Margin="0,5,0,15"
+                     Items="{Binding ActiveServices}">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="{Binding NewExecutorCommand}" CommandParameter="NewRemoteProcess"
+                                  Header="New remote process" />
+                        <MenuItem Command="{Binding NewExecutorCommand}" CommandParameter="NewRemoteDbus"
+                                  Header="New remote dbus" />
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+                <ListBox.DataTemplates>
+                    <DataTemplate DataType="{x:Type model:Process}">
+                        <Grid ColumnDefinitions="20, 45, *, auto" HorizontalAlignment="Stretch">
+                            <Ellipse Grid.Column="0" x:Name="Status"
+                                     Fill="{Binding Status, Converter={StaticResource StatusLightningVc}, Mode=OneWay}"
+                                     Width="10" Height="10" VerticalAlignment="Center" />
+                            <Label Grid.Column="1" Content="PROC" Foreground="{Binding ElementName=Status, Path=Fill}"
+                                   VerticalAlignment="Center" FontWeight="DemiBold" />
+                            <UniformGrid Grid.Column="2" Rows="1" Columns="2" Margin="20,0,0,0">
+                                <TextBox x:Name="ProcessName" Margin="5,0,0,0" HorizontalAlignment="Stretch"
+                                         Text="{Binding Name, FallbackValue=Name}" UseFloatingWatermark="False"
+                                         Watermark="Process Name" VerticalAlignment="Center" />
+                                <TextBox x:Name="Args" Margin="5,0,0,0" HorizontalAlignment="Stretch"
+                                         Text="{Binding Args, FallbackValue=Args}" UseFloatingWatermark="False"
+                                         Watermark="Process Args" VerticalAlignment="Center" />
+                            </UniformGrid>
+                            <StackPanel Grid.Column="3" Margin="5,0,0,0" Orientation="Horizontal"
+                                        HorizontalAlignment="Stretch">
+                                <ToggleSwitch OnContent="" OffContent=""
+                                              Command="{Binding $parent[Window].DataContext.RunStopCommand}"
+                                              CommandParameter="{Binding Mode=TwoWay}">
+                                    <ToggleSwitch.IsEnabled>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="#ProcessName.Text"
+                                                     Converter="{x:Static StringConverters.IsNotNullOrEmpty}" />
+                                            <Binding Path="$parent[Window].DataContext.Client.IsConnected" />
+                                        </MultiBinding>
+                                    </ToggleSwitch.IsEnabled>
+                                </ToggleSwitch>
+                                <Button CornerRadius="20" Width="30" Height="30" HorizontalContentAlignment="Center"
+                                        Background="Transparent" Classes="buttonStyle1"
+                                        Command="{Binding $parent[Window].DataContext.RemoteExecutorCommand}"
+                                        CommandParameter="{Binding}">
+                                    <Button.Content>
+                                        <material:MaterialIcon Kind="Trash"></material:MaterialIcon>
+                                    </Button.Content>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type model:Service}">
+                        <Grid ColumnDefinitions="20, 45, *, auto" HorizontalAlignment="Stretch">
+                            <Ellipse Grid.Column="0" x:Name="Status"
+                                     Fill="{Binding Status, Converter={StaticResource StatusLightningVc}, Mode=OneWay}"
+                                     Width="10" Height="10" VerticalAlignment="Center" />
+                            <Label Grid.Column="1" Content="DBUS" Foreground="{Binding ElementName=Status, Path=Fill}"
+                                   VerticalAlignment="Center" FontWeight="DemiBold" />
+                            <UniformGrid Grid.Column="2" Rows="1" Columns="2" Margin="20,0,0,0">
+                                <TextBox x:Name="ServiceName" Margin="5,0,0,0" HorizontalAlignment="Stretch"
+                                         Text="{Binding Name, FallbackValue=Name}" VerticalAlignment="Center"
+                                         UseFloatingWatermark="False" Watermark="Dbus service name" />
+                                <TextBox x:Name="Args" Margin="5,0,0,0" HorizontalAlignment="Stretch"
+                                         Text="{Binding Args, FallbackValue=Args}" VerticalAlignment="Center"
+                                         UseFloatingWatermark="False" Watermark="Sudo password" />
+                            </UniformGrid>
+                            <StackPanel Margin="5,0,0,0" Grid.Column="3" Orientation="Horizontal"
+                                        HorizontalAlignment="Stretch">
+                                <ToggleSwitch OnContent="" OffContent=""
+                                              Command="{Binding DataContext.RunStopCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Window}}"
+                                              CommandParameter="{Binding Mode=TwoWay}">
+                                    <ToggleSwitch.IsEnabled>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="#ServiceName.Text"
+                                                     Converter="{x:Static StringConverters.IsNotNullOrEmpty}" />
+                                            <Binding Path="#Args.Text"
+                                                     Converter="{x:Static StringConverters.IsNotNullOrEmpty}" />
+                                            <Binding Path="$parent[Window].DataContext.Client.IsConnected" />
+                                        </MultiBinding>
+                                    </ToggleSwitch.IsEnabled>
+
+                                </ToggleSwitch>
+                                <Button CornerRadius="20" Width="30" Height="30" HorizontalContentAlignment="Center"
+                                        Background="Transparent" Classes="buttonStyle1"
+                                        Command="{Binding $parent[Window].DataContext.RemoteExecutorCommand}"
+                                        CommandParameter="{Binding}">
+                                    <Button.Content>
+                                        <material:MaterialIcon Kind="Trash"></material:MaterialIcon>
+                                    </Button.Content>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.DataTemplates>
+            </ListBox>
+
+            <TextBox Grid.Row="2" TextAlignment="Left" Text="{Binding Path=StatusText, Mode= OneWay}" />
+
+
+            <!--<Grid Grid.Row="2" Margin="0,10,0,10">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
           <ColumnDefinition Width="*"/>
@@ -64,9 +169,9 @@
         <TextBox Grid.Column="1" Margin="0,0,10,0" UseFloatingWatermark="False" Watermark="Arguments" TextAlignment="Left" Text="{Binding Path=RemoteProcessArgs, Mode= TwoWay}"/>
         <Button Grid.Column="2" Content="Run" Command="{Binding RunRemoteProcessCommand, Mode=TwoWay}"></Button>
         <Button Grid.Column="3" Content="Stop" Command="{Binding StopRemoteProcessCommand} "></Button>
-      </Grid>
+      </Grid>-->
 
-      <Grid Grid.Row="3" Margin="0,10,0,10">
+            <!--<Grid Grid.Row="3" Margin="0,10,0,10">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
           <ColumnDefinition Width="*"/>
@@ -78,15 +183,16 @@
         <TextBox Grid.Column="1" Margin="0,0,10,0" PasswordChar="#" UseFloatingWatermark="False" Watermark="Sudo password" TextAlignment="Left" Text="{Binding Path=RemoteSudoPwd, Mode= TwoWay}"/>
         <Button Grid.Column="2" Content="Run" Command="{Binding RunDbusRemoteProcessCommand} "></Button>
         <Button Grid.Column="3" Content="Stop" Command="{Binding StopDbusRemoteProcessCommand} "></Button>
-      </Grid>
+      </Grid>-->
 
 
-    <Grid Grid.Row="4" RowDefinitions="*, 4, *" Margin="10,0,0,0">
-       <lvc:CartesianChart Grid.Row="0" ZoomMode="X" Series="{Binding CoreTempSeries}" XAxes="{Binding XAxes}" LegendPosition="Right"/>
-      <GridSplitter Grid.Row="1" Background="LightGray" ResizeDirection="Rows"/>
-      <lvc:CartesianChart  Grid.Row="2" ZoomMode="X" Series="{Binding ServiceSeries}" XAxes="{Binding XAxes}"  LegendPosition="Right"/>
-      </Grid>
+            <Grid Grid.Row="3" RowDefinitions="*, 4, *" Margin="10,0,0,0">
+                <lvc:CartesianChart Grid.Row="0" ZoomMode="X" Series="{Binding CoreTempSeries}" XAxes="{Binding XAxes}"
+                                    LegendPosition="Right" />
+                <GridSplitter Grid.Row="1" Background="LightGray" ResizeDirection="Rows" />
+                <lvc:CartesianChart Grid.Row="2" ZoomMode="X" Series="{Binding ServiceSeries}" XAxes="{Binding XAxes}"
+                                    LegendPosition="Right" />
+            </Grid>
+        </Grid>
     </Grid>
-
-  </Grid>
 </Window>
