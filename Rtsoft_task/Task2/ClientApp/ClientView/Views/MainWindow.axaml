@@ -1,13 +1,13 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:ClientView.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        xmlns:model="using:ClientApp.Models"
         xmlns:material="using:Material.Icons.Avalonia"
+        xmlns:vm="using:ClientView.ViewModels"
+        xmlns:model="using:ClientApp.Models"
         xmlns:valueConverters="using:ClientView.Infrastructure.ValueConverters"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ClientView.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="Client control panel">
@@ -155,36 +155,6 @@
             </ListBox>
 
             <TextBox Grid.Row="2" TextAlignment="Left" Text="{Binding Path=StatusText, Mode= OneWay}" />
-
-
-            <!--<Grid Grid.Row="2" Margin="0,10,0,10">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="auto"/>
-          <ColumnDefinition Width="auto"/>
-        </Grid.ColumnDefinitions>
-
-        <TextBox Grid.Column="0" Margin="0,0,10,0" UseFloatingWatermark="False" Watermark="Process Name" TextAlignment="Left" Text="{Binding Path=RemoteProcessName, Mode= TwoWay}"/>
-        <TextBox Grid.Column="1" Margin="0,0,10,0" UseFloatingWatermark="False" Watermark="Arguments" TextAlignment="Left" Text="{Binding Path=RemoteProcessArgs, Mode= TwoWay}"/>
-        <Button Grid.Column="2" Content="Run" Command="{Binding RunRemoteProcessCommand, Mode=TwoWay}"></Button>
-        <Button Grid.Column="3" Content="Stop" Command="{Binding StopRemoteProcessCommand} "></Button>
-      </Grid>-->
-
-            <!--<Grid Grid.Row="3" Margin="0,10,0,10">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="auto"/>
-          <ColumnDefinition Width="auto"/>
-        </Grid.ColumnDefinitions>
-
-        <TextBox Grid.Column="0" Margin="0,0,10,0" UseFloatingWatermark="False" Watermark="Dbus service name" TextAlignment="Left" Text="{Binding Path=RemoteDbusServiceName, Mode= TwoWay}"/>
-        <TextBox Grid.Column="1" Margin="0,0,10,0" PasswordChar="#" UseFloatingWatermark="False" Watermark="Sudo password" TextAlignment="Left" Text="{Binding Path=RemoteSudoPwd, Mode= TwoWay}"/>
-        <Button Grid.Column="2" Content="Run" Command="{Binding RunDbusRemoteProcessCommand} "></Button>
-        <Button Grid.Column="3" Content="Stop" Command="{Binding StopDbusRemoteProcessCommand} "></Button>
-      </Grid>-->
-
 
             <Grid Grid.Row="3" RowDefinitions="*, 4, *" Margin="10,0,0,0">
                 <lvc:CartesianChart Grid.Row="0" ZoomMode="X" Series="{Binding CoreTempSeries}" XAxes="{Binding XAxes}"
