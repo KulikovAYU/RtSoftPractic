@@ -120,7 +120,7 @@
                                 <TextBox x:Name="ServiceName" Margin="5,0,0,0" HorizontalAlignment="Stretch"
                                          Text="{Binding Name, FallbackValue=Name}" VerticalAlignment="Center"
                                          UseFloatingWatermark="False" Watermark="Dbus service name" />
-                                <TextBox x:Name="Args" Margin="5,0,0,0" HorizontalAlignment="Stretch"
+                                <TextBox PasswordChar="#" x:Name="Args" Margin="5,0,0,0" HorizontalAlignment="Stretch"
                                          Text="{Binding Args, FallbackValue=Args}" VerticalAlignment="Center"
                                          UseFloatingWatermark="False" Watermark="Sudo password" />
                             </UniformGrid>

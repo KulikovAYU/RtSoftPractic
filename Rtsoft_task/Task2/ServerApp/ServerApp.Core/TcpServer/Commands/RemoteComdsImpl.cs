@@ -210,7 +210,7 @@ namespace ServerApp.Core.TcpServer.Commands
     }
 
 
-    public class RemoteStopTmdsDbusCmd : RemoteRunDbusCmd
+    public class RemoteStopTmdsDbusCmd : RemoteStopDbusCmd
     {
         public RemoteStopTmdsDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {

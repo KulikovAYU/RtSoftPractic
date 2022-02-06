@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using ClientApp.Base;
 using ClientApp.Client;
 using DynamicData.Binding;
@@ -109,7 +110,7 @@ namespace ClientView.ViewModels
         {
             if (itm.Status == State.Stopped)
             {
-                Client.SendMessage(itm.ActivateCmd.ToJSON().ToString());
+                Client.SendMessage(itm.ActivateCmd.ToJSON());
             }
             else if (itm.Status == State.Started)
             {
@@ -250,23 +251,22 @@ namespace ClientView.ViewModels
                         }
                         case CommandType.eRunDbus:
                         {
-                            GetServiceByGuid(resp.Guid)?.Start();
+                            //ATTENTION: must update in ui thread
+                            Dispatcher.UIThread.Post(() => { GetServiceByGuid(resp.Guid)?.Start();}); 
                             AddUniqueMeasurement(ServiceSeries, resp.Body);
                             break;
                         }
                         case CommandType.eRunProc:
                         {
-                            GetServiceByGuid(resp.Guid)?.Start();
-                            break;
-                        }
-                        case CommandType.eStopDbus:
-                        {
-                            GetServiceByGuid(resp.Guid)?.Stop();
+                            //ATTENTION: must update in ui thread
+                            Dispatcher.UIThread.Post(() => { GetServiceByGuid(resp.Guid)?.Start();});
                             break;
                         }
                         case CommandType.eStopProc:
+                        case CommandType.eStopDbus:
                         {
-                            GetServiceByGuid(resp.Guid)?.Stop();
+                            //ATTENTION: must update in ui thread
+                            Dispatcher.UIThread.Post(() => { GetServiceByGuid(resp.Guid)?.Stop();});
                             break;
                         }
                     }

@@ -19,7 +19,7 @@ namespace ClientApp.Client
         public string Name { get; set; }
         public string Args { get; set; }
 
-        public Guid Guid { get; private set; } = Guid.NewGuid();
+        public Guid Guid { get; set; }
 
         public string ToJSON() => JsonConvert.SerializeObject(this);
     }

@@ -18,7 +18,7 @@ namespace ServerApp.Core.TcpServer
         public string Body { get; private set; }
      
 
-        public string ToJson()
+        public virtual  string ToJson()
         {
             return JsonConvert.SerializeObject(this);
         }
@@ -30,6 +30,9 @@ namespace ServerApp.Core.TcpServer
         {
             Guid = guid;
         }
-        public Guid Guid { get; private set; } = Guid.Empty;
+
+        public Guid Guid { get; }
+        
+
     }
 }
