@@ -120,38 +120,6 @@ namespace ClientView.ViewModels
         
         #endregion
 
-        #region Command to run/stop remote process
-
-        // public ReactiveCommand<AbstractItem, Unit> RunStopRemoteProcessCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
-        // {
-        //     if (itm.Status == State.Stopped)
-        //     {
-        //         Client.SendMessage(itm.ActivateCmd.ToJSON().ToString());
-        //     }
-        //     else if (itm.Status == State.Started)
-        //     {
-        //         Client.SendMessage(itm.DeactivateCmd.ToJSON());
-        //     }
-        // }, Client.WhenAnyValue(clnt => clnt.IsConnected));
-
-        #endregion
-
-        #region Command to runn/stop remote d bus service
-        // public ReactiveCommand<AbstractItem, Unit> RunStopDbusRemoteProcessCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
-        // {
-        //     if (itm.Status == State.Stopped)
-        //     {
-        //         Client.SendMessage(itm.ActivateCmd.ToJSON());
-        //     }
-        //     else if (itm.Status == State.Started)
-        //     {
-        //         Client.SendMessage(itm.DeactivateCmd.ToJSON());
-        //     }
-        // }, Client.WhenAnyValue(clnt => clnt.IsConnected));
-
-        #endregion
-
-
         #region Command which creates executors and remove theirs
         
         public ReactiveCommand<string, Unit> NewExecutorCommand => ReactiveCommand.Create<string>((cmdName) =>

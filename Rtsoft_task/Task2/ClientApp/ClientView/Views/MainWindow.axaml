@@ -75,7 +75,7 @@
                             <Ellipse Grid.Column="0" x:Name="Status"
                                      Fill="{Binding Status, Converter={StaticResource StatusLightningVc}, Mode=OneWay}"
                                      Width="10" Height="10" VerticalAlignment="Center" />
-                            <Label Grid.Column="1" Content="PROC" Foreground="{Binding ElementName=Status, Path=Fill}"
+                            <Label Grid.Column="1" Content="PROC" Foreground="{Binding #Status.Fill}"
                                    VerticalAlignment="Center" FontWeight="DemiBold" />
                             <UniformGrid Grid.Column="2" Rows="1" Columns="2" Margin="20,0,0,0">
                                 <TextBox x:Name="ProcessName" Margin="5,0,0,0" HorizontalAlignment="Stretch"
@@ -114,7 +114,7 @@
                             <Ellipse Grid.Column="0" x:Name="Status"
                                      Fill="{Binding Status, Converter={StaticResource StatusLightningVc}, Mode=OneWay}"
                                      Width="10" Height="10" VerticalAlignment="Center" />
-                            <Label Grid.Column="1" Content="DBUS" Foreground="{Binding ElementName=Status, Path=Fill}"
+                            <Label Grid.Column="1" Content="DBUS" Foreground="{Binding #Status.Fill}"
                                    VerticalAlignment="Center" FontWeight="DemiBold" />
                             <UniformGrid Grid.Column="2" Rows="1" Columns="2" Margin="20,0,0,0">
                                 <TextBox x:Name="ServiceName" Margin="5,0,0,0" HorizontalAlignment="Stretch"
