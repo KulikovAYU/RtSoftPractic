@@ -9,7 +9,7 @@ using ServerApp.Core.Server.Commands;
 
 namespace ServerApp.Core.Server
 {
-    public class TcpServer : ITcpServer
+    class TcpServer : ITcpServer
     {
         private readonly IEventBus eventBus_;
         private bool isRunning_ = false;

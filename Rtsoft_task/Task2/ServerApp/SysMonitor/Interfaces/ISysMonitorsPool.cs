@@ -1,4 +1,4 @@
-﻿namespace SysMonitor
+﻿namespace SysMonitor.Interfaces
 {
     public interface ISysMonitorsPool
     {

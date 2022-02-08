@@ -56,9 +56,6 @@ namespace ServerApp.Core
 
         public string UserPassword { get; private set; }
 
-        public override string ToString()
-        {
-            return $"ip: {IpAddress}, port: {PortNumber}, max conn: {MaxConnections}";
-        }
+        public override string ToString() => $"ip: {IpAddress}, port: {PortNumber}, max conn: {MaxConnections}";
     }
 }

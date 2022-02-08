@@ -12,14 +12,14 @@ namespace SysMonitor
                 case DevidceType.eCPUMonitor:
                 {
                     if (Utils.GetProcIdByServiceName(out var procId, args))
-                        return SysMonitorEntryPointCfg.Ioc.Resolve<IMqttMessageSender>(
+                        return SysMonitorModule.Ioc.Resolve<IMqttMessageSender>(
                             new NamedParameter("procId", procId),
                             new NamedParameter("serviceName", args));
                     break;
                 }
                 case DevidceType.eCPUTemp:
                 {
-                    return SysMonitorEntryPointCfg.Ioc.Resolve<IMqttMessageSender>();
+                    return SysMonitorModule.Ioc.Resolve<IMqttMessageSender>();
                 }
                 case DevidceType.eUndef:
                 default:

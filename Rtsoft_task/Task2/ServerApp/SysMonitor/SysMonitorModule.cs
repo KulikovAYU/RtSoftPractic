@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using Autofac;
-using Autofac.Core.Activators.Reflection;
 using MQTTnet;
 using SysMonitor.Devices;
 using SysMonitor.Interfaces;
@@ -9,9 +8,7 @@ using MQTTnet.Client;
 
 namespace SysMonitor
 {
-
-
-    public class SysMonitorEntryPointCfg : Module
+    public class SysMonitorModule : Module
     {
         public static IContainer Ioc { get;  set; }
         

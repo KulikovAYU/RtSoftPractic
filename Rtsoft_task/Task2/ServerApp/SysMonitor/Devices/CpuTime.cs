@@ -18,9 +18,6 @@ namespace SysMonitor.Devices
         [ProtoMember(4)]
         public int Id { get; set; }
 
-        public override string ToString()
-        {
-            return $"value = {Value}; time point = {TimePoint}; service = {ServiceName}; Id = {Id}";
-        }
+        public override string ToString() => $"value = {Value}; time point = {TimePoint}; service = {ServiceName}; Id = {Id}";
     }
 }

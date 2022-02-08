@@ -27,7 +27,7 @@ namespace SysMonitor
 
         public static void CreateDevice(DevidceType type,string args = null)
         {
-            var device = SysMonitorEntryPointCfg.Ioc.Resolve<DeviceFactory>().Create(type, args);
+            var device = SysMonitorModule.Ioc.Resolve<DeviceFactory>().Create(type, args);
             if(device != null)
                 _mqttPublisher.AddDevice(device);
         }

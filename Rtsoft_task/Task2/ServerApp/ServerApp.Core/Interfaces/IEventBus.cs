@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ServerApp.Core.Server
+namespace ServerApp.Core.Interfaces
 {
     public interface IEventBus
     {

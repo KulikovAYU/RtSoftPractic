@@ -1,6 +1,6 @@
 ﻿using ServerApp.Core.Interfaces;
 using ServerApp.Core.Mqtt;
-using SysMonitor;
+using SysMonitor.Interfaces;
 
 namespace ServerApp.Core
 {

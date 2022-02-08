@@ -1,17 +1,9 @@
 ﻿using System.Net;
+using SysMonitor.Interfaces;
 
 namespace SysMonitor
 {
-    public interface ISocketPrefs
-    {
-        int PortNumber { get; }
-        IPAddress IpAddress { get; }
-        int MaxConnections { get; }
-        string UserName { get; }
-        string UserPassword { get; }
-    }
-
-    public class SocketPrefs : ISocketPrefs
+    class SocketPrefs : ISocketPrefs
     {
         public class Builder
         {

@@ -47,10 +47,10 @@ namespace ServerApp.Core
             builder.RegisterType<MqttBrocker>()
                 .WithParameter(new TypedParameter(typeof(ISocketPrefs), MqttBrocker.GetDefaultPrefs())).AsSelf();
             
-            builder.RegisterModule<SysMonitorEntryPointCfg>();
+            builder.RegisterModule<SysMonitorModule>();
             
             Ioc = builder.Build();
-            SysMonitorEntryPointCfg.Ioc = Ioc;
+            SysMonitorModule.Ioc = Ioc;
             
             return Ioc;
         }

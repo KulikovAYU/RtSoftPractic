@@ -13,9 +13,6 @@ namespace ServerApp.Core.Server
             ClientData = newClient;
         }
 
-        public override string ToString()
-        {
-            return $"{Name}; Data: {ClientData.Client.RemoteEndPoint}";
-        }
+        public override string ToString() => $"{Name}; Data: {ClientData.Client.RemoteEndPoint}";
     }
 }
