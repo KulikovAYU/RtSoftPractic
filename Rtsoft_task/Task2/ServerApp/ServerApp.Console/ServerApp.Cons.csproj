@@ -10,6 +10,10 @@
     <ProjectReference Include="..\ServerApp.Core\ServerApp.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.3.0" />
+  </ItemGroup>
+
 
 
 

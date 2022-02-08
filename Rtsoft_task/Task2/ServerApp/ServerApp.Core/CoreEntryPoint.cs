@@ -1,45 +1,38 @@
-﻿using ServerApp.Core.Mqtt;
-using ServerApp.Core.TcpServer;
+﻿using ServerApp.Core.Interfaces;
+using ServerApp.Core.Mqtt;
 using SysMonitor;
 
 namespace ServerApp.Core
 {
-    public static class CoreEntryPoint
+    class ServerApplication : IServerApplication
     {
-        public static TcpServer.TcpServer commandTcpSrv { get; private set; }
-        public static MqttBrocker mqqtBrocker { get; private set; }
+        private readonly ITcpServer _tcpServer;
+        private readonly ISysMonitorsPool _sysMonitorsPool;
+        private readonly MqttBrocker _mqttBrocker;
 
-
-
-        public static void StartServices(IEventBus eventBus = null)
+        public ServerApplication(ITcpServer tcpServer, ISysMonitorsPool sysMonitorsPool, MqttBrocker mqttBrocker)
         {
-
-            #region TCP Server configuration
-
-            commandTcpSrv = new TcpServer.TcpServer(TcpServer.TcpServer.GetDefaultPrefs(), eventBus);
-            commandTcpSrv.Start();
-
-            #endregion
-
-
-            #region MQTT brocker configuration
-            mqqtBrocker = new MqttBrocker(MqttBrocker.GetDefaultPrefs(), eventBus);
-            mqqtBrocker.Start();
-            #endregion
-
-
-            #region MQTT publisher configuration
-
-            SysMonitorsPool.StartServices();
-
-            #endregion
+            _tcpServer = tcpServer;
+            _sysMonitorsPool = sysMonitorsPool;
+            _mqttBrocker = mqttBrocker;
         }
 
-        public static void StopServices(IEventBus eventBus = null)
+        public void Run()
         {
-            commandTcpSrv.Stop();
-            mqqtBrocker.Stop();
-            SysMonitorsPool.Stop();
+            _tcpServer.Start();
+            _mqttBrocker.Start();
+            
+            //MQTT publisher starting
+            _sysMonitorsPool.StartServices();
+        }
+
+        public void Stop()
+        {
+            _tcpServer.Stop();
+            _mqttBrocker.Stop();
+            
+            //MQTT publisher stopping
+            _sysMonitorsPool.StopServices();
         }
     }
 }

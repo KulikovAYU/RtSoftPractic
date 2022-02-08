@@ -1,48 +1,42 @@
-﻿using MQTTnet;
-using MQTTnet.Client;
+﻿using MQTTnet.Client;
 using MQTTnet.Client.Options;
-using SysMonitor.Devices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SysMonitor.Interfaces;
 
 
 namespace SysMonitor.Mqtt
 {
-    public class MqttPublisher
+    public class MqttPublisher : IMqttPublisher
     {
-        private readonly SocketPrefs prefs_;
+        private readonly ISocketPrefs _prefs;
         private IMqttClient Client { get; set; }
 
-        public MqttPublisher(SocketPrefs prefs)
+        public MqttPublisher(IMqttClient mqttClient, ISocketPrefs prefs)
         {
-            prefs_ = prefs;
-            Client = new MqttFactory().CreateMqttClient();
+            _prefs = prefs;
+
+            Client = mqttClient;
         }
 
-        public static SocketPrefs GetDefaultPrefs()
+        public static ISocketPrefs GetDefaultPrefs()
         {
             return
-             SocketPrefs
-             .NewBuilder()
-             .SetIp("127.0.0.1")
-             .SetMaxConnections(10)
-             .SetPortNum(11001)
-             .Build();
+                SocketPrefs
+                    .NewBuilder()
+                    .SetIp("127.0.0.1")
+                    .SetMaxConnections(10)
+                    .SetPortNum(11001)
+                    .Build();
         }
 
         public void Start()
         {
             //handlers
-            Client.UseConnectedHandler(e =>
-            {
-                Console.WriteLine("Connected successfully with MQTT Brokers.");
-            });
-            Client.UseDisconnectedHandler(e =>
-            {
-                Console.WriteLine("Disconnected from MQTT Brokers.");
-            });
+            Client.UseConnectedHandler(e => { Console.WriteLine("Connected successfully with MQTT Brokers."); });
+            Client.UseDisconnectedHandler(e => { Console.WriteLine("Disconnected from MQTT Brokers."); });
 
             Client.UseApplicationMessageReceivedHandler(e =>
             {
@@ -65,7 +59,7 @@ namespace SysMonitor.Mqtt
             {
                 var optionsBuilder = new MqttClientOptionsBuilder()
                     .WithClientId($"{Guid.NewGuid()}")
-                    .WithTcpServer(prefs_.IpAddress.ToString(), prefs_.PortNumber)
+                    .WithTcpServer(_prefs.IpAddress.ToString(), _prefs.PortNumber)
                     .WithCleanSession()
                     .Build();
 
@@ -73,14 +67,14 @@ namespace SysMonitor.Mqtt
                 Client.ConnectAsync(optionsBuilder).Wait();
 
                 //Create new publish Task
-                Task.Run(async () => {
+                Task.Run(async () =>
+                {
                     while (Client.IsConnected)
                     {
                         await StartPublishAsync();
                         Task.Delay(2000).Wait();
                     }
                 });
-
             }
             catch (Exception)
             {
@@ -88,20 +82,16 @@ namespace SysMonitor.Mqtt
             }
         }
 
-        public void AddDevice(IMqqtMessageSender sender)
+        public void AddDevice(IMqttMessageSender sender)
         {
-            if(sender != null)
-                devices_.Add(sender);
+            if (sender != null)
+                _devices.Add(sender);
         }
 
-        public void RemoveDeviceByTopic(string topicName)
-        {
-            devices_.Remove(devices_.FirstOrDefault(topName => topName.GetTopicName().Equals(topicName)));
-        }
-        
         public void RemoveDevice(DevidceType devType, string args = "")
         {
-            devices_.Remove(devices_.FirstOrDefault(type => type.Type.Equals(devType) &&  args.Equals(type.GetServiceName())));
+            _devices.Remove(_devices.FirstOrDefault(type =>
+                type.Type.Equals(devType) && args.Equals(type.GetServiceName())));
         }
 
         public void Stop()
@@ -111,14 +101,13 @@ namespace SysMonitor.Mqtt
 
         async Task StartPublishAsync()
         {
-            foreach (var dev in devices_)
+            foreach (var dev in _devices)
             {
-                Console.WriteLine($"publishing at {DateTime.UtcNow}; client {dev.GetDescription()};");
+                Console.WriteLine($"publishing at {DateTime.UtcNow}; client {dev.GetDescription()}");
                 _ = await Client.PublishAsync(dev.GetMsg());
             }
-              
         }
 
-        private List<IMqqtMessageSender> devices_ = new List<IMqqtMessageSender>();
+        private readonly List<IMqttMessageSender> _devices = new List<IMqttMessageSender>();
     }
 }

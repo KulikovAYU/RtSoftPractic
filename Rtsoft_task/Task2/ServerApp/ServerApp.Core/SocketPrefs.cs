@@ -1,8 +1,9 @@
 ﻿using System.Net;
+using ServerApp.Core.Interfaces;
 
 namespace ServerApp.Core
 {
-    public class SocketPrefs
+    public class SocketPrefs : ISocketPrefs
     {
         public class Builder
         {

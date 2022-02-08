@@ -2,31 +2,28 @@
 using MQTTnet;
 using MQTTnet.Server;
 using MQTTnet.Protocol;
-using ServerApp.Core.TcpServer;
+using ServerApp.Core.Interfaces;
+using ServerApp.Core.Server;
 
 namespace ServerApp.Core.Mqtt
 {
     /// <summary>
     /// Dispatcher between the senders and receivers
     /// </summary>
-    public class MqttBrocker
+    class MqttBrocker
     {
-        private SocketPrefs prefs_;
-        public static readonly IMqttServer Server;
-        private IEventBus eventBus_;
+        private readonly ISocketPrefs _prefs;
+        private readonly IMqttServer _server;
+        private readonly IEventBus _eventBus;
 
-        static MqttBrocker()
+        public MqttBrocker(IMqttServer server, ISocketPrefs prefs, IEventBus eventBus = null)
         {
-            Server = new MqttFactory().CreateMqttServer();
+            _server = server;
+            _prefs = prefs;
+            _eventBus = eventBus;
         }
 
-        public MqttBrocker(SocketPrefs prefs, IEventBus eventBus = null)
-        {
-            prefs_ = prefs;
-            eventBus_ = eventBus;
-        }
-
-        public static SocketPrefs GetDefaultPrefs()
+        public static ISocketPrefs GetDefaultPrefs()
         {
            return
             SocketPrefs
@@ -47,30 +44,30 @@ namespace ServerApp.Core.Mqtt
                 var optionsBuilder = new MqttServerOptionsBuilder()
                     .WithConnectionValidator(c =>
                    {
-                       eventBus_.Print($"{c.ClientId} connection validator for c.Endpoint: {c.Endpoint}");
+                       _eventBus.Print($"{c.ClientId} connection validator for c.Endpoint: {c.Endpoint}");
                        c.ReasonCode = MqttConnectReasonCode.Success;
                    })
-                    .WithConnectionBacklog(prefs_.MaxConnections)
-                    .WithDefaultEndpointBoundIPAddress(prefs_.IpAddress)
-                    .WithDefaultEndpointPort(prefs_.PortNumber)
+                    .WithConnectionBacklog(_prefs.MaxConnections)
+                    .WithDefaultEndpointBoundIPAddress(_prefs.IpAddress)
+                    .WithDefaultEndpointPort(_prefs.PortNumber)
                     .Build();
 
                 //start server
-                Server.StartAsync(optionsBuilder).Wait();
+                _server.StartAsync(optionsBuilder).Wait();
 
-                eventBus_?.Print($"Mqqt Broker is Running. Configuration is {prefs_}");
+                _eventBus?.Print($"Mqqt Broker is Running. Configuration is {_prefs}");
             }
             catch (Exception ex)
             {
                 var msg = ex.Message;
-                eventBus_?.Error(ex.Message);
+                _eventBus?.Error(ex.Message);
             }
         }
 
         public void Stop()
         {
-            eventBus_.Print("Stop broker");
-            Server.StopAsync().Wait();
+            _eventBus.Print("Stop broker");
+            _server.StopAsync().Wait();
         }
     }
 }

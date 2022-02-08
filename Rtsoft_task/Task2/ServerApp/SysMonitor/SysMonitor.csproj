@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.3.0" />
     <PackageReference Include="MQTTnet" Version="3.1.1" />
     <PackageReference Include="protobuf-net" Version="3.0.101" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="6.0.0" />

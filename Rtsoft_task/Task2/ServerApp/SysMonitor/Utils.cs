@@ -13,6 +13,9 @@ namespace SysMonitor
         {
             procId = 0;
 
+            if (string.IsNullOrEmpty(serviceName))
+                return false;
+            
             string getProcIdScript = $"systemctl show --property MainPID --value {serviceName}";
             if (ExecuteScript(out var sOutput, getProcIdScript))
             {

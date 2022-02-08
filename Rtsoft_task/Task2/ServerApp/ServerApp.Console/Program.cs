@@ -1,6 +1,8 @@
 ﻿using ServerApp.Core;
 using System;
-using ServerApp.Core.TcpServer;
+using Autofac;
+using ServerApp.Core.Interfaces;
+using ServerApp.Core.Server;
 
 namespace ServerApp.Cons
 {
@@ -47,23 +49,27 @@ namespace ServerApp.Cons
     {
         static void Main(string[] args)
         {
-            EventBusImpl eventBus = new EventBusImpl();
-
-            UI ui = new UI();
-            eventBus.ErrorHappened += ui.Error;
-            eventBus.PrintHappened += ui.Print;
+            var coreContainer = ServerAppCoreEntryPointCfg.Configure();
+            
+            using var scope = coreContainer.BeginLifetimeScope();
+            var evBus = scope.Resolve<IEventBus>();
+            
+            UI ui1 = new UI();
+            evBus.ErrorHappened += ui1.Error;
+            evBus.PrintHappened += ui1.Print;
 
             //just immitation
-            Logger log = new Logger();
-            eventBus.ErrorHappened += log.Error;
-            eventBus.PrintHappened += log.Print;
-
-
-            CoreEntryPoint.StartServices(eventBus);
-
+            Logger log1 = new Logger();
+            evBus.ErrorHappened += log1.Error;
+            evBus.PrintHappened += log1.Print;
+                
+            var serverApp = scope.Resolve<IServerApplication>();
+                
+            serverApp.Run();
+                
             Console.ReadLine();
-
-            CoreEntryPoint.StopServices(eventBus);
+                
+            serverApp.Stop();
         }
     }
 }

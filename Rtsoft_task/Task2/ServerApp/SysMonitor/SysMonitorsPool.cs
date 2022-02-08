@@ -1,56 +1,40 @@
-﻿using SysMonitor.Devices;
-using SysMonitor.Mqtt;
+﻿using Autofac;
+using SysMonitor.Interfaces;
 
 namespace SysMonitor
 {
     public enum DevidceType {eUndef, eCPUMonitor, eCPUTemp }
 
-    public static class SysMonitorsPool
+    public class SysMonitorsPool : ISysMonitorsPool
     {
-        private static MqttPublisher MqqtPublisher { get; set; }
-
-        public static void StartServices()
+        private static IMqttPublisher _mqttPublisher;
+        
+        public SysMonitorsPool(IMqttPublisher mqttPublisher)
         {
-            #region MQTT publisher configuration
-
-            MqqtPublisher = new MqttPublisher(MqttPublisher.GetDefaultPrefs());
-            MqqtPublisher.Start();
-
-            #endregion
-
+            _mqttPublisher = mqttPublisher;
+        }
+        
+        public void StartServices()
+        {
+            _mqttPublisher.Start();
             CreateDevice(DevidceType.eCPUTemp);
         }
 
-        public static void Stop()
+        public void StopServices()
         {
-            MqqtPublisher.Stop();
+            _mqttPublisher.Stop();
         }
 
         public static void CreateDevice(DevidceType type,string args = null)
         {
-            switch (type)
-            {
-                case DevidceType.eCPUMonitor:
-                    {
-                        if (Utils.GetProcIdByServiceName(out var procId, args))
-                            MqqtPublisher.AddDevice(new MqqtCpuServiceMonitor(procId, args));
-                        break;
-                    }
-                case DevidceType.eCPUTemp:
-                    {
-                        MqqtPublisher.AddDevice(new MqqtCpuTemperatureMonitor());
-                        break;
-                    }
-                case DevidceType.eUndef:
-                default:
-                    break;
-            }
+            var device = SysMonitorEntryPointCfg.Ioc.Resolve<DeviceFactory>().Create(type, args);
+            if(device != null)
+                _mqttPublisher.AddDevice(device);
         }
 
         public static void RemoveDevice(DevidceType type, string args = null)
         {
-            MqqtPublisher.RemoveDevice(type, args);
-            //MqqtPublisher.RemoveDevice()
+            _mqttPublisher.RemoveDevice(type, args);
             //TODO: Impl
 
         }
