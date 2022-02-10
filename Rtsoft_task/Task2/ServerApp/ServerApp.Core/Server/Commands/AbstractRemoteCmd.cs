@@ -4,7 +4,7 @@ namespace ServerApp.Core.Server.Commands
 {
     public enum CommandType { eUndef = -1, eEStablishConnect, eRunProc, eStopProc, eRunDbus, eStopDbus }
 
-    abstract class AbstractRemoteCmd
+    public abstract class AbstractRemoteCmd
     {
         protected readonly Guid _guid;
         protected readonly string _name;

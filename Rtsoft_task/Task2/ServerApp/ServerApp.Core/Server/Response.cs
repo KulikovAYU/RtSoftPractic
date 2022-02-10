@@ -4,7 +4,7 @@ using ServerApp.Core.Server.Commands;
 
 namespace ServerApp.Core.Server
 {
-    class Response
+    public class Response
     {
         public CommandType Type { get; set; }
         public int StatusCode { get; set; }
@@ -17,13 +17,11 @@ namespace ServerApp.Core.Server
             Body = body;
         }
 
-        public string ToJson()
-        {
-            return JsonConvert.SerializeObject(this);
-        }
+        // public virtual string ToJson() => JsonConvert.SerializeObject(this);
+     
     }
 
-    class CommandResponse : Response 
+    public class CommandResponse : Response 
     {
         public CommandResponse(Guid guid ,CommandType type, int statusCode, string body = "") : base(type, statusCode, body)
         {
@@ -33,5 +31,7 @@ namespace ServerApp.Core.Server
         public Guid Guid { get; }
         
 
+        // public override string ToJson() => JsonConvert.SerializeObject(this);
+      
     }
 }

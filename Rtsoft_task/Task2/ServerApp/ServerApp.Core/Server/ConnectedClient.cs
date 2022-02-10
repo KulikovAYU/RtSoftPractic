@@ -1,8 +1,9 @@
 ﻿using System.Net.Sockets;
+using ServerApp.Core.Interfaces;
 
 namespace ServerApp.Core.Server
 {
-    class ConnectedClient
+    class ConnectedClient : IConnectedClient
     {
         public TcpClient ClientData { get;private set; }
 

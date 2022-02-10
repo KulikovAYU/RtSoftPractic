@@ -4,23 +4,24 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using ServerApp.Core.Extentions;
 using ServerApp.Core.Interfaces;
 using ServerApp.Core.Server.Commands;
 
 namespace ServerApp.Core.Server
 {
-    class TcpServer : ITcpServer
+    public class TcpServer : ITcpServer
     {
-        private readonly IEventBus eventBus_;
-        private bool isRunning_ = false;
-        private TcpListener server_;
-        private ISocketPrefs pref_;
-        private List<ConnectedClient> clients_ = new List<ConnectedClient>();
+        private readonly IEventBus _eventBus;
+        private bool _isRunning = false;
+        private TcpListener _server;
+        private readonly ISocketPrefs _pref;
+        private readonly List<IConnectedClient> _clients = new List<IConnectedClient>(new List<ConnectedClient>());
 
         public TcpServer(ISocketPrefs pref, IEventBus eventBus = null)
         {
-            pref_ = pref;
-            eventBus_ = eventBus;
+            _pref = pref;
+            _eventBus = eventBus;
         }
 
         public static ISocketPrefs GetDefaultPrefs()
@@ -43,31 +44,34 @@ namespace ServerApp.Core.Server
 
         public void Stop()
         {
-            isRunning_ = false;
+            _server.Stop();
+            _isRunning = false;
         }
 
+        public List<IConnectedClient> GetConnectedClients() =>_clients;
+  
         void EstablishConnection()
         {
-            server_ = new TcpListener(pref_.IpAddress, pref_.PortNumber);
-            server_.Start();
-            isRunning_ = true;
+            _server = new TcpListener(_pref.IpAddress, _pref.PortNumber);
+            _server.Start();
+            _isRunning = true;
         }
 
         private async Task ListenClientsAsync()
         {
-            eventBus_?.Print($"Waiting for client on {pref_}");
+            _eventBus?.Print($"Waiting for client on {_pref}");
 
-            while (isRunning_)
+            while (_isRunning)
             {
                 try
                 {
                     //wait for client connection
-                    TcpClient newClient = await server_.AcceptTcpClientAsync();
+                    TcpClient newClient = await _server.AcceptTcpClientAsync();
 
 
                     //create thread on connection
                     ConnectedClient client = new ConnectedClient(newClient);
-                    clients_.Add(client);
+                    _clients.Add(client);
 
                     _ = Task.Factory.StartNew(async () =>
                       {
@@ -81,7 +85,7 @@ namespace ServerApp.Core.Server
 
                           if (client.ClientData.Connected)
                           {
-                              eventBus_?.Print($"Client {client.Name} has join at server!");
+                              _eventBus?.Print($"Client {client.Name} has join at server!");
                               var test = new Response(CommandType.eEStablishConnect, 200, $"Hello {client.Name} from server =)").ToJson();
                               await sWriter.WriteLineAsync(new Response(CommandType.eEStablishConnect, 200, $"Hello {client.Name} from server =)").ToJson());
                           }
@@ -96,7 +100,7 @@ namespace ServerApp.Core.Server
                                   if (sData == null)
                                       break;
 
-                                  eventBus_?.Print($"Recieved Data {sData}");
+                                  _eventBus?.Print($"Recieved Data {sData}");
 
                                   //execute command
                                   var response = CommandExecutor.FromJson(sData);
@@ -108,15 +112,15 @@ namespace ServerApp.Core.Server
                               }
                           }
 
-                          eventBus_?.Print($"Client {client} has left from server");
+                          _eventBus?.Print($"Client {client} has left from server");
                           client.ClientData.GetStream().Close();
                           client.ClientData.Close();
-                          clients_.Remove(client);
+                          _clients.Remove(client);
                       });
                 }
                 catch (Exception ex)
                 {
-                    eventBus_?.Error($"Failed listening incomming connection: {ex}");
+                    _eventBus?.Error($"Failed listening incomming connection: {ex}");
                 }
             }
         }

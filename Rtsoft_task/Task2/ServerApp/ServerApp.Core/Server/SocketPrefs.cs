@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using ServerApp.Core.Interfaces;
 
-namespace ServerApp.Core
+namespace ServerApp.Core.Server
 {
     public class SocketPrefs : ISocketPrefs
     {

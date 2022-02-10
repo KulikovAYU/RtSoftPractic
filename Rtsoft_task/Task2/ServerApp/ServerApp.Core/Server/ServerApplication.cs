@@ -2,7 +2,7 @@
 using ServerApp.Core.Mqtt;
 using SysMonitor.Interfaces;
 
-namespace ServerApp.Core
+namespace ServerApp.Core.Server
 {
     class ServerApplication : IServerApplication
     {

@@ -94,7 +94,6 @@ namespace SysMonitor
                 
                 if (execRes)
                 {
-
                     sSresult = proc.StandardOutput.ReadToEnd();
                     return proc.WaitForExit(10000);
                 }

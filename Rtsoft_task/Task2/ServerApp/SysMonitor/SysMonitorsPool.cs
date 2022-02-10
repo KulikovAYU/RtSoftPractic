@@ -36,7 +36,6 @@ namespace SysMonitor
         {
             _mqttPublisher.RemoveDevice(type, args);
             //TODO: Impl
-
         }
     }
 }

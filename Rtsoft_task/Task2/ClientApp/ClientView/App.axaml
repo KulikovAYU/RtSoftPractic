@@ -11,11 +11,4 @@
       <StyleInclude Source="avares://Material.Icons.Avalonia/App.xaml"></StyleInclude>
     </Application.Styles>
 
-  <Application.Resources>
-    <ResourceDictionary>
-      <ResourceDictionary.MergedDictionaries>
-        <ResourceInclude Source='/Dictionaries/ButtonsDictionary.axaml'/>
-      </ResourceDictionary.MergedDictionaries>
-    </ResourceDictionary>
-  </Application.Resources>
 </Application>

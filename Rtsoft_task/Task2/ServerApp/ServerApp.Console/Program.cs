@@ -2,7 +2,7 @@
 using System;
 using Autofac;
 using ServerApp.Core.Interfaces;
-using ServerApp.Core.Server;
+
 
 namespace ServerApp.Cons
 {
@@ -49,7 +49,9 @@ namespace ServerApp.Cons
     {
         static void Main(string[] args)
         {
-            var coreContainer = ServerAppCoreEntryPointCfg.Configure();
+
+            var server = new ServerAppCoreEntryPointCfg();
+            var coreContainer =  server.Configure();
             
             using var scope = coreContainer.BeginLifetimeScope();
             var evBus = scope.Resolve<IEventBus>();

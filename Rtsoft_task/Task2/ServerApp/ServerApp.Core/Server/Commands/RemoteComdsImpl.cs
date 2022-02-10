@@ -2,14 +2,15 @@
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
-using Newtonsoft.Json.Linq;
+using Autofac;
+using ServerApp.Core.Modules;
 using SysMonitor;
 using systemd1.DBus;
 using Tmds.DBus;
 
 namespace ServerApp.Core.Server.Commands
 {
-    class RemoteRunProcCmd : AbstractRemoteCmd
+    public class RemoteRunProcCmd : AbstractRemoteCmd
     {
         public RemoteRunProcCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
@@ -47,7 +48,7 @@ namespace ServerApp.Core.Server.Commands
         }
     }
 
-    class RemoteStopProcCmd : AbstractRemoteCmd
+    public class RemoteStopProcCmd : AbstractRemoteCmd
     {
 
         public RemoteStopProcCmd(Guid guid, string name, string args) : base(guid, name, args)
@@ -81,7 +82,7 @@ namespace ServerApp.Core.Server.Commands
         }
     }
 
-    class RemoteRunDbusCmd : AbstractRemoteCmd
+    public class RemoteRunDbusCmd : AbstractRemoteCmd
     {
         public RemoteRunDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
@@ -128,7 +129,7 @@ namespace ServerApp.Core.Server.Commands
     }
 
 
-    class RemoteRunTmdsDbusCmd : RemoteRunDbusCmd
+    public class RemoteRunTmdsDbusCmd : RemoteRunDbusCmd
     {
         public RemoteRunTmdsDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
@@ -163,7 +164,7 @@ namespace ServerApp.Core.Server.Commands
         
     }
 
-    class RemoteStopDbusCmd : AbstractRemoteCmd
+    public class RemoteStopDbusCmd : AbstractRemoteCmd
     {
         public RemoteStopDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
@@ -211,7 +212,7 @@ namespace ServerApp.Core.Server.Commands
     }
 
 
-    class RemoteStopTmdsDbusCmd : RemoteStopDbusCmd
+    public class RemoteStopTmdsDbusCmd : RemoteStopDbusCmd
     {
         public RemoteStopTmdsDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
         {
@@ -248,21 +249,28 @@ namespace ServerApp.Core.Server.Commands
     {
         public static Response FromJson(string cmdJson)
         {
-            JObject jObject = JObject.Parse(cmdJson);
-            Guid guid = Guid.Parse(jObject["Guid"].ToString());
-            CommandType cmdType = (CommandType)int.Parse(jObject["Type"]?.ToString() ?? string.Empty);
-            string cmd = jObject["Name"]?.ToString();
-            string args = jObject["Args"]?.ToString();
-
-            switch (cmdType)
+            try
             {
-                case CommandType.eRunProc: return new RemoteRunProcCmd(guid, cmd, args).Execute();
-                case CommandType.eStopProc: return new RemoteStopProcCmd(guid, cmd, args).Execute();
-                case CommandType.eRunDbus: return new RemoteRunTmdsDbusCmd(guid, cmd, args).Execute();
-                case CommandType.eStopDbus: return new RemoteStopTmdsDbusCmd(guid, cmd, args).Execute();
+                var clientCmd = ClientCommand.FromJson(cmdJson);
+
+                switch (clientCmd.Type)
+                {
+                    case CommandType.eRunProc:
+                        return ContainerOfModulesBase.Ioc.Resolve<RemoteRunProcCmd>( new PositionalParameter(0, clientCmd.Guid), new PositionalParameter(1, clientCmd.Name), new PositionalParameter(2, clientCmd.Args)).Execute();
+                    case CommandType.eStopProc:
+                        return ContainerOfModulesBase.Ioc.Resolve<RemoteStopProcCmd>( new PositionalParameter(0, clientCmd.Guid), new PositionalParameter(1, clientCmd.Name), new PositionalParameter(2, clientCmd.Args)).Execute();
+                    case CommandType.eRunDbus:
+                        return ContainerOfModulesBase.Ioc.Resolve<RemoteRunTmdsDbusCmd>( new PositionalParameter(0, clientCmd.Guid), new PositionalParameter(1, clientCmd.Name), new PositionalParameter(2, clientCmd.Args)).Execute();
+                    case CommandType.eStopDbus:
+                        return ContainerOfModulesBase.Ioc.Resolve<RemoteStopTmdsDbusCmd>( new PositionalParameter(0, clientCmd.Guid), new PositionalParameter(1, clientCmd.Name), new PositionalParameter(2, clientCmd.Args)).Execute();
+                }
+            }
+            catch (Exception e)
+            {
+               return new CommandResponse(Guid.Empty, CommandType.eUndef, 400, e.Message);
             }
 
-            return new CommandResponse(guid, CommandType.eUndef, 204, "Undefined command type");
+            return new CommandResponse(Guid.Empty, CommandType.eUndef, 204, "Undefined command type");
         }
     }
 }
