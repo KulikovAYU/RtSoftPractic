@@ -12,6 +12,8 @@ using Xunit;
 
 namespace ServerTests.Tests;
 
+[Collection("Stub object Test Collection")]
+[CollectionDefinition("Stub object Test Collection",DisableParallelization = true)]
 /// <summary>
 /// test with stub command objects
 /// </summary>

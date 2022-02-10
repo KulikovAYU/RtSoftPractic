@@ -128,7 +128,6 @@ namespace ServerApp.Core.Server.Commands
         }
     }
 
-
     public class RemoteRunTmdsDbusCmd : RemoteRunDbusCmd
     {
         public RemoteRunTmdsDbusCmd(Guid guid, string name, string args) : base(guid, name, args)
@@ -161,7 +160,6 @@ namespace ServerApp.Core.Server.Commands
             
             return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
         }
-        
     }
 
     public class RemoteStopDbusCmd : AbstractRemoteCmd
@@ -253,16 +251,20 @@ namespace ServerApp.Core.Server.Commands
             {
                 var clientCmd = ClientCommand.FromJson(cmdJson);
 
+                var guid = new PositionalParameter(0, clientCmd.Guid);
+                var name = new PositionalParameter(1, clientCmd.Name);
+                var cmd = new PositionalParameter(2, clientCmd.Args);
+                
                 switch (clientCmd.Type)
                 {
                     case CommandType.eRunProc:
-                        return ContainerOfModulesBase.Ioc.Resolve<RemoteRunProcCmd>( new PositionalParameter(0, clientCmd.Guid), new PositionalParameter(1, clientCmd.Name), new PositionalParameter(2, clientCmd.Args)).Execute();
+                        return ContainerOfModulesBase.Ioc.Resolve<RemoteRunProcCmd>(guid, name, cmd).Execute();
                     case CommandType.eStopProc:
-                        return ContainerOfModulesBase.Ioc.Resolve<RemoteStopProcCmd>( new PositionalParameter(0, clientCmd.Guid), new PositionalParameter(1, clientCmd.Name), new PositionalParameter(2, clientCmd.Args)).Execute();
+                        return ContainerOfModulesBase.Ioc.Resolve<RemoteStopProcCmd>(guid, name, cmd).Execute();
                     case CommandType.eRunDbus:
-                        return ContainerOfModulesBase.Ioc.Resolve<RemoteRunTmdsDbusCmd>( new PositionalParameter(0, clientCmd.Guid), new PositionalParameter(1, clientCmd.Name), new PositionalParameter(2, clientCmd.Args)).Execute();
+                        return ContainerOfModulesBase.Ioc.Resolve<RemoteRunTmdsDbusCmd>(guid, name, cmd).Execute();
                     case CommandType.eStopDbus:
-                        return ContainerOfModulesBase.Ioc.Resolve<RemoteStopTmdsDbusCmd>( new PositionalParameter(0, clientCmd.Guid), new PositionalParameter(1, clientCmd.Name), new PositionalParameter(2, clientCmd.Args)).Execute();
+                        return ContainerOfModulesBase.Ioc.Resolve<RemoteStopTmdsDbusCmd>(guid, name, cmd).Execute();
                 }
             }
             catch (Exception e)

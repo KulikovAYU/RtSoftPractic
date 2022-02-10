@@ -12,6 +12,8 @@ using Xunit;
 
 namespace ServerTests.Tests;
 
+[Collection("Integ Test Collection")]
+[CollectionDefinition("Integ Test Collection",DisableParallelization = true)]
 public class IntegUnitTests : IClassFixture<TestServerAppCoreEntryPointCfg>, IDisposable
 {
     private readonly ITcpServer _tcpServer;

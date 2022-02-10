@@ -10,6 +10,7 @@ namespace ServerApp.Core.Extentions
         public static string ToJson(this CommandResponse response) => JsonConvert.SerializeObject(response);
         
         public static Response FromJson(this Response response, string jResp) => JsonConvert.DeserializeObject<Response>(jResp);
+        
         public static CommandResponse FromJson(this CommandResponse response, string jResp) => JsonConvert.DeserializeObject<CommandResponse>(jResp);
        
     }
