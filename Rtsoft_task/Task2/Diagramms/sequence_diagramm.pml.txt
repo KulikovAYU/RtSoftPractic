@@ -1,0 +1,56 @@
+@startuml
+participant Client
+participant Server
+
+activate Server
+activate Client
+Client -> Server: Establish connect
+
+critical successful case
+Server->Server: register new user\nand create new\nthread for him
+Server->Client: Establishing ok
+else failed connection
+Server->Client: Establishing failed
+end
+
+
+Client->Client: create new remote\nprocess task
+activate Client
+alt successful case
+Client -> Server: <b>«Run process»</b> cmd
+Server->Server: invoke <b>«Run process»</b> cmd
+Server->Client: <b>«Run process»</b> cmd ok
+else failed execute
+Server->Client: Run process cmd failed
+end
+
+alt successful case
+Client -> Server:  <b>«Stop process»</b> cmd
+Server->Server: invoke <b>«Stop process»</b> cmd
+Server->Client: <b>«Stop process»</b> cmd ok
+else failed execute
+Server->Client: <b>«Stop process»</b> cmd failed
+end
+deactivate Client
+
+
+Client->Client: create new remote \ndbus service task
+activate Client
+alt successful case
+Client -> Server: <b>«Run dbus»</b> cmd
+Server->Server: invoke <b>«Run dbus»</b> cmd
+Server->Client: <b>«Run dbus»</b> cmd ok
+else failed execute
+Server->Client: Run <b>«Run dbus»</b> cmd failed
+end
+
+alt successful case
+Client -> Server: <b>«Stop dbus»</b> cmd
+Server->Server: invoke <b>«Stop dbus»</b>  cmd
+Server->Client: <b>«Stop dbus»</b> cmd ok
+else failed execute
+Server->Client: <b>«Stop dbus»</b> cmd failed
+end
+
+deactivate Client
+@enduml
