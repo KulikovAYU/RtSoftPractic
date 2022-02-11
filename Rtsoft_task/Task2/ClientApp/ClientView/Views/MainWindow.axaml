@@ -59,17 +59,26 @@
                 <Button Content="Disconnect" Grid.Column="5" Command="{Binding BreakConnectCommand} " />
             </Grid>
 
-            <ListBox Cursor="Hand" Background="Transparent" Grid.Row="1" Margin="0,5,0,15"
-                     Items="{Binding ActiveServices}">
-                <ListBox.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Command="{Binding NewExecutorCommand}" CommandParameter="NewRemoteProcess"
-                                  Header="New remote process" />
-                        <MenuItem Command="{Binding NewExecutorCommand}" CommandParameter="NewRemoteDbus"
-                                  Header="New remote dbus" />
-                    </ContextMenu>
-                </ListBox.ContextMenu>
-                <ListBox.DataTemplates>
+            <TreeView Cursor="Hand" Background="Transparent" Grid.Row="1" Margin="0,5,0,15"
+                      Items="{Binding Commands}">
+                <TreeView.DataTemplates>
+                    <TreeDataTemplate DataType="model:ICommandsGroup" ItemsSource="{Binding Commands}">
+                        <TreeDataTemplate.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Foreground="Gray" Text="{Binding Name}" VerticalAlignment="Center"
+                                           FontWeight="DemiBold" />
+                                <Button x:Name="NewRemoteProcess" CornerRadius="20" Width="30" Height="30"
+                                        HorizontalContentAlignment="Center"
+                                        Background="Transparent" Margin="5,0,0,0"
+                                        Command="{Binding $parent[Window].DataContext.NewExecutorCommand}"
+                                        CommandParameter="{Binding }">
+                                    <Button.Content>
+                                        <material:MaterialIcon Kind="Pencil" Foreground="Gray" />
+                                    </Button.Content>
+                                </Button>
+                            </StackPanel>
+                        </TreeDataTemplate.Content>
+                    </TreeDataTemplate>
                     <DataTemplate DataType="{x:Type model:Process}">
                         <Grid ColumnDefinitions="20, 45, *, auto" HorizontalAlignment="Stretch">
                             <Ellipse Grid.Column="0" x:Name="Status"
@@ -141,7 +150,7 @@
 
                                 </ToggleSwitch>
                                 <Button CornerRadius="20" Width="30" Height="30" HorizontalContentAlignment="Center"
-                                        Background="Transparent" Classes="buttonStyle1"
+                                        Background="Transparent" 
                                         Command="{Binding $parent[Window].DataContext.RemoteExecutorCommand}"
                                         CommandParameter="{Binding}">
                                     <Button.Content>
@@ -151,8 +160,15 @@
                             </StackPanel>
                         </Grid>
                     </DataTemplate>
-                </ListBox.DataTemplates>
-            </ListBox>
+                </TreeView.DataTemplates>
+
+                <TreeView.Styles>
+                    <Style Selector="TreeViewItem">
+                        <Setter Property="IsExpanded" Value="True" />
+                        <!-- <Setter Property="Background" Value="Transparent" /> -->
+                    </Style>
+                </TreeView.Styles>
+            </TreeView>
 
             <TextBox Grid.Row="2" TextAlignment="Left" Text="{Binding Path=StatusText, Mode= OneWay}" />
 

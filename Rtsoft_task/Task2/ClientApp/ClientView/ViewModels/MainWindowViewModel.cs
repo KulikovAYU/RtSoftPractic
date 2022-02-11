@@ -33,6 +33,9 @@ namespace ClientView.ViewModels
         public ObservableCollection<ISeries> CoreTempSeries { get; set; } = new();
         public ObservableCollection<AbstractItem> ActiveServices { get; set; } = new();
 
+        public ObservableCollection<ICommandsGroup> Commands { get; set; } = new() { new RunProcessCommandsGroup() , new RunDbusCommandsGroup()};
+        //ActiveServices
+
         [Reactive] public string RemoteProcessName { get; set; } = new("vlc");
         [Reactive] public string RemoteProcessArgs { get; set; } = new("");
 
@@ -122,17 +125,15 @@ namespace ClientView.ViewModels
 
         #region Command which creates executors and remove theirs
         
-        public ReactiveCommand<string, Unit> NewExecutorCommand => ReactiveCommand.Create<string>((cmdName) =>
+        public ReactiveCommand<ICommandsGroup, Unit> NewExecutorCommand => ReactiveCommand.Create<ICommandsGroup>((cmdGroup) =>
         {
-            var newCmd = ServiceFactory.Create(cmdName);
-            if (newCmd != null)
-                ActiveServices.Add(newCmd);
+            cmdGroup.New();
         });
         
         public ReactiveCommand<AbstractItem, Unit> RemoteExecutorCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
         {
+            itm.Parent.Commands.Remove(itm);
             //TODO: may be stopped
-            ActiveServices.Remove(itm);
         });
         
         #endregion
@@ -264,6 +265,6 @@ namespace ClientView.ViewModels
             return true;
         }
 
-        private AbstractItem? GetServiceByGuid(Guid cmdGuid) => ActiveServices.FirstOrDefault(srv => srv.Guid.Equals(cmdGuid));
+        private AbstractItem? GetServiceByGuid(Guid cmdGuid) => Commands.Select(cmd => cmd.Commands.FirstOrDefault(itm => itm.Guid.Equals(cmdGuid))).FirstOrDefault(command => command != null);
     }
 }

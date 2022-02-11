@@ -24,6 +24,8 @@ namespace ClientApp.Models
 
         public string Args { get; set; }
 
+        public ICommandsGroup Parent { get; set; }
+
         public void Start()
         {
             Status = State.Started;
