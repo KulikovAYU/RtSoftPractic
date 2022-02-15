@@ -52,7 +52,7 @@ namespace ClientApp.Utils
             }
         }
 
-        public abstract Task HandleMessage(T message, Action<Ret> onComplete = null);
+        public abstract Task HandleMessage(T message, Action<Ret>? onComplete = null);
 
         public abstract Task HandleError(T message, Exception ex);
 

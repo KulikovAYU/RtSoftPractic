@@ -12,25 +12,26 @@ namespace ClientApp.Client
 {
     public class Client : ViewModelBase
     {
-        public bool IsConnected { get; private set; } = false;
-        private StreamReader sReader_;
-        private StreamWriter sWriter_;
-        private TcpClient tcpClient_;
-        private ConnectionPref pref_;
-        private IMqttClient clientMqtt_;
-        private readonly IEventBus eventBus_;
+        public bool IsConnected { get; private set; }
+        private StreamReader _sReader;
+        private StreamWriter _sWriter;
+        private TcpClient _tcpClient;
+        private ConnectionPref _pref;
+        private MqttConnectionPref _mqttPref;
+        private readonly IMqttClient _clientMqtt;
+        private readonly IEventBus? _eventBus;
 
-        public Client(IEventBus eventBus = null)
+        public Client(IEventBus? eventBus = null)
         {
-            eventBus_ = eventBus;
-            clientMqtt_ = new MqttFactory().CreateMqttClient();
+            _eventBus = eventBus;
+            _clientMqtt = new MqttFactory().CreateMqttClient();
         }
 
         public void SendMessage(string msg)
         {
             if (string.IsNullOrEmpty(msg))
             {
-                eventBus_?.Error("Incorrect JSON");
+                _eventBus?.Error("Incorrect JSON");
                 return;
             }
 
@@ -38,8 +39,8 @@ namespace ClientApp.Client
             {
                 try
                 {
-                    eventBus_.Print($"Sending JSON {msg}");
-                    sWriter_.WriteLine(msg);
+                    _eventBus?.Print($"Sending JSON {msg}");
+                    _sWriter.WriteLine(msg);
                 }
                 catch (Exception)
                 {
@@ -48,17 +49,16 @@ namespace ClientApp.Client
             });
         }
 
-
         void WaitForData()
         {
             Task.Factory.StartNew(async () =>
             {
-                while (tcpClient_?.Connected == true)
+                while (_tcpClient?.Connected == true)
                 {
                     try
                     {
-                        string sDataIncomming = await sReader_.ReadLineAsync();
-                        eventBus_.OnResponse(sDataIncomming);
+                        string? sDataIncomming = await _sReader.ReadLineAsync();
+                        _eventBus.OnResponse(sDataIncomming);
 
                         if (sDataIncomming == null)
                             return;
@@ -72,34 +72,35 @@ namespace ClientApp.Client
             });
         }
 
-        public async Task EstablishConnectionAsync(ConnectionPref pref)
+        public async Task EstablishConnectionAsync(ConnectionPref pref, MqttConnectionPref mqttPref)
         {
-            tcpClient_ ??= new TcpClient();
+            _tcpClient ??= new TcpClient();
 
-            if (!tcpClient_.Connected)
+            if (!_tcpClient.Connected)
             {
                 try
                 {
-                    pref_ = pref;
-                    eventBus_?.Print("Establishing connection");
+                    _pref = pref;
+                    _mqttPref = mqttPref;
+                    _eventBus?.Print("Establishing connection");
 
-                    await tcpClient_.ConnectAsync(pref_.HostNameOrAdress, pref_.PortNumber);
+                    await _tcpClient.ConnectAsync(_pref.HostNameOrAdress, _pref.PortNumber);
 
-                    NetworkStream stream = tcpClient_.GetStream();
-                    sReader_ = new StreamReader(stream, Encoding.ASCII);
-                    sWriter_ = new StreamWriter(stream, Encoding.ASCII) {AutoFlush = true};
+                    NetworkStream stream = _tcpClient.GetStream();
+                    _sReader = new StreamReader(stream, Encoding.ASCII);
+                    _sWriter = new StreamWriter(stream, Encoding.ASCII) {AutoFlush = true};
 
-                    await sWriter_.WriteLineAsync(pref_.UserName);
-                    await sWriter_.WriteLineAsync(pref_.Id.ToString());
+                    await _sWriter.WriteLineAsync(_pref.UserName);
+                    await _sWriter.WriteLineAsync(_pref.Id.ToString());
 
-                    await EstablishMqttConnectionAsync(pref_);
+                    await EstablishMqttConnectionAsync(_pref);
 
                     WaitForData();
-                    IsConnected = tcpClient_.Connected;
+                    IsConnected = _tcpClient.Connected;
                 }
                 catch (Exception ex)
                 {
-                    eventBus_?.Error(ex.Message);
+                    _eventBus?.Error(ex.Message);
                     IsConnected = false;
                 }
             }
@@ -107,22 +108,21 @@ namespace ClientApp.Client
 
         public void DisconnectCommand()
         {
-            if (tcpClient_ == null)
+            if (_tcpClient == null)
                 return;
 
-            eventBus_?.Print("Start diconnection");
-            NetworkStream networkStream = tcpClient_.GetStream();
+            _eventBus?.Print("Start diconnection");
+            NetworkStream networkStream = _tcpClient.GetStream();
             networkStream.Close();
 
             CloseConnection();
             DisconnectFromMqtt();
         }
 
-
         void CloseConnection()
         {
-            tcpClient_.Close();
-            tcpClient_ = null;
+            _tcpClient.Close();
+            _tcpClient = null;
             IsConnected = false;
         }
 
@@ -130,35 +130,33 @@ namespace ClientApp.Client
         {
             //configure options
             IMqttClientOptions options = new MqttClientOptionsBuilder()
-                .WithClientId(pref.Id.ToString())
-                .WithTcpServer(pref.HostNameOrAdress, pref.PortNumber + 1)
+                .WithClientId(_mqttPref.Id.ToString())
+                .WithTcpServer(_mqttPref.HostAdress, _mqttPref.PortNumber)
                 // .WithCredentials("bud", "%spencer%")
                 .WithCleanSession()
                 .Build();
 
             //Handlers
-            clientMqtt_.UseConnectedHandler(async e =>
+            _clientMqtt.UseConnectedHandler(async e =>
             {
-                
-                eventBus_?.Print($"Connected successfully with MQTT Brokers.");
+                _eventBus?.Print($"Connected successfully with MQTT Brokers.");
 
                 //Subscribe to topic
-                await clientMqtt_.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("RemoteSrvrData/#").Build());
+                await _clientMqtt.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("RemoteSrvrData/#").Build());
             });
-            clientMqtt_.UseDisconnectedHandler(e =>
+            _clientMqtt.UseDisconnectedHandler(e =>
             {
-                eventBus_?.Print("Disconnected from MQTT Brokers.");
-                var reason = e.Reason;
+                _eventBus?.Print($"Disconnected from MQTT Brokers. Reason:{e.Reason.ToString()}");
             });
-            clientMqtt_.UseApplicationMessageReceivedHandler(async e => { await eventBus_?.OnMqqtEvent(e); });
+            _clientMqtt.UseApplicationMessageReceivedHandler(async e => { await _eventBus?.OnMqqtEvent(e); });
 
             //actually connect
-            await clientMqtt_.ConnectAsync(options);
+            await _clientMqtt.ConnectAsync(options);
         }
 
         void DisconnectFromMqtt()
         {
-            clientMqtt_.DisconnectAsync().Wait();
+            _clientMqtt.DisconnectAsync().Wait();
         }
     }
 }

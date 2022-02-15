@@ -1,14 +1,4 @@
 using System;
-using ClientApp.Models;
-using LiveChartsCore;
-using LiveChartsCore.Defaults;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
-using MQTTnet;
-using ProtoBuf;
-using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
-using SkiaSharp;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -18,40 +8,57 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using ClientApp.Base;
 using ClientApp.Client;
+using ClientApp.Models;
+using ClientApp.Utils;
 using DynamicData.Binding;
-
+using LiveChartsCore;
+using LiveChartsCore.Defaults;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.Painting;
+using MQTTnet;
+using ProtoBuf;
+using ReactiveUI;
+using ReactiveUI.Fody.Helpers;
+using SkiaSharp;
 
 namespace ClientView.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase, IEventBus
     {
         #region Properties
-        public ConnectionPref Pref { get; set; }
+        [Reactive] public ConnectionPref Pref { get; set; } =  new()
+        {
+            HostNameOrAdress = "127.0.0.1",
+            PortNumber = 11000,
+            UserName = "Anton"
+        };
+        
+        [Reactive] public MqttConnectionPref MqttPref { get; set; } =  new()
+        {
+            HostAdress = "127.0.0.1",
+            PortNumber = 11001,
+        };
+        
         public List<Axis> XAxes { get; set; }
 
         public ObservableCollection<ISeries> ServiceSeries { get; set; } = new();
         public ObservableCollection<ISeries> CoreTempSeries { get; set; } = new();
-        public ObservableCollection<AbstractItem> ActiveServices { get; set; } = new();
 
         public ObservableCollection<ICommandsGroup> Commands { get; set; } = new() { new RunProcessCommandsGroup() , new RunDbusCommandsGroup()};
-        //ActiveServices
-
-        [Reactive] public string RemoteProcessName { get; set; } = new("vlc");
-        [Reactive] public string RemoteProcessArgs { get; set; } = new("");
-
-        [Reactive] public string RemoteDbusServiceName { get; set; } = new("foo-daemon.service");
-        [Reactive] public string RemoteSudoPwd { get; set; } = new("");
 
         [Reactive] public string StatusText { get; private set;} = new("");
 
         [Reactive] public Client Client { get; private set; }
         
+        [Reactive] private bool IsSaveSettingsOk { get; set; }
+
         #endregion
 
         #region Constructor
 
         public MainWindowViewModel()
         {
+           
             Client = new Client(this);
 
             Client.WhenAnyPropertyChanged()
@@ -60,21 +67,18 @@ namespace ClientView.ViewModels
                     this.RaisePropertyChanged(nameof(EstablishConnectCommand));
                     this.RaisePropertyChanged(nameof(BreakConnectCommand));
                 });
-            
-            Pref = new ConnectionPref()
-            {
-                HostNameOrAdress = "127.0.0.1",
-                PortNumber = 11000,
-                UserName = "Anton"
-            };
 
+            MqttPref.WhenAnyPropertyChanged()
+                .Subscribe(_ => { this.RaisePropertyChanged(nameof(SaveMqttSettingsCommand));});
+            
+           // WindowNotificationManager notificationManager = new WindowNotificationManager()
             XAxes = new List<Axis>
             {
                 new()
                 {
                     // Use the Label property to indicate the format of the labels in the axis
                     // The Labeler takes the value of the label as parameter and must return it as string
-                    Labeler = (value) => "",
+                    Labeler = value => "",
 
                     // The MinStep property lets you define the minimum separation (in chart values scale)
                     // between every axis separator, in this case we don't want decimals,
@@ -87,7 +91,18 @@ namespace ClientView.ViewModels
                     SeparatorsPaint = new SolidColorPaint(SKColors.LightGray, 2)
                 }
             };
-               
+
+            Task.Run(async () =>
+            {
+                var pref = await SettingsManager.GetInstance()
+                    .LoadPrefAsync<MqttConnectionPref>(SavePathRepo.GetJsonPath(MqttPref));
+                
+                if(pref != null)
+                    MqttPref = pref;
+            });
+
+            //try to load mqtt settings
+
         }
 
         #endregion
@@ -96,9 +111,9 @@ namespace ClientView.ViewModels
 
         public ReactiveCommand<Unit, Task> EstablishConnectCommand =>ReactiveCommand.Create(async () =>
         {
-            await Client.EstablishConnectionAsync(Pref);
+            await Client.EstablishConnectionAsync(Pref, MqttPref);
           
-        },  this.WhenAnyValue(vm=> vm.Client.IsConnected, (isConnected)=>!isConnected));
+        },  this.WhenAnyValue(vm=> vm.Client.IsConnected, isConnected=>!isConnected));
         
         public ReactiveCommand<Unit, Unit> BreakConnectCommand => ReactiveCommand.Create(() =>
         {
@@ -109,7 +124,7 @@ namespace ClientView.ViewModels
      
         #region Invoke commands (Run/Stop Process, Run/Stop Dbus)
         
-        public ReactiveCommand<AbstractItem, Unit> RunStopCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
+        public ReactiveCommand<AbstractItem, Unit> RunStopCommand => ReactiveCommand.Create<AbstractItem>(itm =>
         {
             if (itm.Status == State.Stopped)
             {
@@ -125,19 +140,30 @@ namespace ClientView.ViewModels
 
         #region Command which creates executors and remove theirs
         
-        public ReactiveCommand<ICommandsGroup, Unit> NewExecutorCommand => ReactiveCommand.Create<ICommandsGroup>((cmdGroup) =>
+        public ReactiveCommand<ICommandsGroup, Unit> NewExecutorCommand => ReactiveCommand.Create<ICommandsGroup>(cmdGroup =>
         {
             cmdGroup.New();
         });
         
-        public ReactiveCommand<AbstractItem, Unit> RemoteExecutorCommand => ReactiveCommand.Create<AbstractItem>((itm) =>
+        public ReactiveCommand<AbstractItem, Unit> RemoteExecutorCommand => ReactiveCommand.Create<AbstractItem>(itm =>
         {
             itm.Parent.Commands.Remove(itm);
             //TODO: may be stopped
         });
         
         #endregion
-      
+
+        public ReactiveCommand<MqttConnectionPref, Unit> SaveMqttSettingsCommand => ReactiveCommand.Create<MqttConnectionPref>(
+            async (mqttPref) =>
+            {
+                IsSaveSettingsOk = await SettingsManager.GetInstance().SavePrefAsync(mqttPref, SavePathRepo.GetJsonPath(mqttPref));
+                if(IsSaveSettingsOk)
+                    Print($"MQTT profile connection settings has been saved sucsesfully:\n{SavePathRepo.GetJsonPath(mqttPref)}");
+                else
+                    Print("Failed to save MQTT profile connection settings");
+            }
+      );
+        
         public void Print(string message)
         {
             StatusText += $"[INFO] {message}\n";
@@ -188,7 +214,7 @@ namespace ClientView.ViewModels
             //Console.WriteLine();
         }
 
-        public void OnResponse(string message)
+        public void OnResponse(string? message)
         {
             if (string.IsNullOrEmpty(message))
                 return;
@@ -221,21 +247,21 @@ namespace ClientView.ViewModels
                         case CommandType.eRunDbus:
                         {
                             //ATTENTION: must update in ui thread
-                            Dispatcher.UIThread.Post(() => { GetServiceByGuid(resp.Guid)?.Start();}); 
+                            Dispatcher.UIThread.InvokeAsync(() => { GetServiceByGuid(resp.Guid)?.Start();}); 
                             AddUniqueMeasurement(ServiceSeries, resp.Body);
                             break;
                         }
                         case CommandType.eRunProc:
                         {
                             //ATTENTION: must update in ui thread
-                            Dispatcher.UIThread.Post(() => { GetServiceByGuid(resp.Guid)?.Start();});
+                            Dispatcher.UIThread.InvokeAsync(() => { GetServiceByGuid(resp.Guid)?.Start();});
                             break;
                         }
                         case CommandType.eStopProc:
                         case CommandType.eStopDbus:
                         {
                             //ATTENTION: must update in ui thread
-                            Dispatcher.UIThread.Post(() => { GetServiceByGuid(resp.Guid)?.Stop();});
+                            Dispatcher.UIThread.InvokeAsync(() => { GetServiceByGuid(resp.Guid)?.Stop();});
                             break;
                         }
                     }

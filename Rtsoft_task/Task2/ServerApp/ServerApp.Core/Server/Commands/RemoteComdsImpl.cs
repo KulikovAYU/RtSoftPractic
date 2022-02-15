@@ -24,8 +24,8 @@ namespace ServerApp.Core.Server.Commands
             {
                 using var p = Process.Start(new ProcessStartInfo
                 {
-                    FileName = _name, //file to execute
-                    Arguments = _args,//arguments to use
+                    FileName = Name, //file to execute
+                    Arguments = Args,//arguments to use
                     UseShellExecute = false,//use process Creation semantics
                     RedirectStandardOutput = true, //redirect standart output to this proc object
                     CreateNoWindow = false,//if this is a terminal app, don't show it
@@ -37,14 +37,14 @@ namespace ServerApp.Core.Server.Commands
                 if (p?.Id > 0)
                 {
                     Console.WriteLine($"Invoked {this}");
-                    return new CommandResponse(_guid,GetIdent(), 200, $"{_name}");
+                    return new CommandResponse(Guid,GetIdent(), StatCodes.SUCSESS, $"{Name}");
                 }
             } catch (Exception)
             {
-                return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+                return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
             }
             
-            return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+            return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
         }
     }
 
@@ -61,9 +61,9 @@ namespace ServerApp.Core.Server.Commands
         {
             try
             {
-                var workers = Process.GetProcessesByName(_name);
+                var workers = Process.GetProcessesByName(Name);
                 if(workers.Length == 0)
-                    return new CommandResponse(_guid, GetIdent(), 204, $"Remote host doesn't contains {this}");
+                    return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"Remote host doesn't contains {this}");
 
                 foreach (Process worker in workers)
                 {
@@ -73,11 +73,11 @@ namespace ServerApp.Core.Server.Commands
                     worker.Dispose();
                 }
 
-                return new CommandResponse(_guid, GetIdent(), 200, $"{_name}");
+                return new CommandResponse(Guid, GetIdent(), StatCodes.SUCSESS, $"{Name}");
             }
             catch (Exception)
             {
-                return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+                return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
             }
         }
     }
@@ -96,7 +96,7 @@ namespace ServerApp.Core.Server.Commands
             try
             {
                 StringBuilder sb = new StringBuilder();
-                sb.Append($"echo {_args} | ").
+                sb.Append($"echo {Args} | ").
                    Append("sudo -S dbus-send ").
                    Append("--print-reply ").
                    Append("--system ").
@@ -104,27 +104,27 @@ namespace ServerApp.Core.Server.Commands
                    Append("--dest=org.freedesktop.systemd1 ").
                    Append("/org/freedesktop/systemd1 ").
                    Append("org.freedesktop.systemd1.Manager.StartUnit ").
-                   Append($"string:\"{_name}\" ").
+                   Append($"string:\"{Name}\" ").
                    Append("string:\"replace\"");
 
                 var runScript = sb.ToString();
                 if (Utils.ExecuteScript(out _, runScript))
                 {
                     Thread.Sleep(1000); // sleep for one second
-                    if (Utils.GetProcIdByServiceName(out _,_name))
+                    if (Utils.GetProcIdByServiceName(out _,Name))
                     {
                         //TODO: вклячть зависимость от SysMonitorsPool через интерфейс
-                        SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, _name);
-                        return new CommandResponse(_guid, GetIdent(), 200, $"{_name}");
+                        SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, Name);
+                        return new CommandResponse(Guid, GetIdent(), StatCodes.SUCSESS, $"{Name}");
                     }
                 }
             }
             catch (Exception)
             {
-                return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+                return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
             }
             
-            return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+            return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
         }
     }
 
@@ -144,21 +144,21 @@ namespace ServerApp.Core.Server.Commands
                 var networkManager = systemConnection.CreateProxy<IManager>("org.freedesktop.systemd1",
                     systemd1Path);
 
-                var result = networkManager.StartUnitAsync(_name, "replace");
+                var result = networkManager.StartUnitAsync(Name, "replace");
                 result.Wait();
                 
                 if (result.IsCompletedSuccessfully)
                 {
-                    SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, _name);
-                    return new CommandResponse(_guid, GetIdent(), 200, $"{_name}");
+                    SysMonitorsPool.CreateDevice(DevidceType.eCPUMonitor, Name);
+                    return new CommandResponse(Guid, GetIdent(), StatCodes.SUCSESS, $"{Name}");
                 }
             }
             catch (Exception)
             {
-                return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+                return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
             }
             
-            return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+            return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
         }
     }
 
@@ -175,11 +175,11 @@ namespace ServerApp.Core.Server.Commands
             //echo 27051989 | sudo -S dbus-send --print-reply --system --type=method_call --dest=org.freedesktop.systemd1 /org/freedesktop/systemd1 org.freedesktop.systemd1.Manager.StopUnit string:"foo-daemon.service" string:"fail"
             try
             {
-                 if (!Utils.GetProcIdByServiceName(out _,_name))
-                     return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+                 if (!Utils.GetProcIdByServiceName(out _,Name))
+                     return new CommandResponse(Guid, GetIdent(),  StatCodes.NO_CONTENT, $"{Name}");
                 
                  StringBuilder sb = new StringBuilder();
-                 sb.Append($"echo {_args} | ").
+                 sb.Append($"echo {Args} | ").
                      Append("sudo -S dbus-send ").
                      Append("--print-reply ").
                      Append("--system ").
@@ -187,7 +187,7 @@ namespace ServerApp.Core.Server.Commands
                      Append("--dest=org.freedesktop.systemd1 ").
                      Append("/org/freedesktop/systemd1 ").
                      Append("org.freedesktop.systemd1.Manager.StopUnit ").
-                     Append($"string:\"{_name}\" ").
+                     Append($"string:\"{Name}\" ").
                      Append("string:\"fail\"");
 
                  var stopScript = sb.ToString();
@@ -195,17 +195,17 @@ namespace ServerApp.Core.Server.Commands
                  if (Utils.ExecuteScript(out _, stopScript))
                  {
                      Thread.Sleep(1000); // sleep for one second
-                     SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, _name);
+                     SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, Name);
                      Console.WriteLine($"Invoked command {this}");
-                     return new CommandResponse(_guid, GetIdent(), 200, $"{_name}");
+                     return new CommandResponse(Guid, GetIdent(), StatCodes.SUCSESS, $"{Name}");
                  }
             }
             catch (Exception)
             {
-                return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+                return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
             }
             
-            return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+            return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
         }
     }
 
@@ -226,20 +226,20 @@ namespace ServerApp.Core.Server.Commands
                 var networkManager = systemConnection.CreateProxy<IManager>("org.freedesktop.systemd1",
                     systemd1Path);
 
-                var result = networkManager.StopUnitAsync(_name, "fail");
+                var result = networkManager.StopUnitAsync(Name, "fail");
                 result.Wait();
                 if (result.IsCompletedSuccessfully)
                 {
-                    SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, _name);
-                    return new CommandResponse(_guid, GetIdent(), 200, $"{_name}");
+                    SysMonitorsPool.RemoveDevice(DevidceType.eCPUMonitor, Name);
+                    return new CommandResponse(Guid, GetIdent(), StatCodes.SUCSESS, $"{Name}");
                 }
             }
             catch (Exception)
             {
-                return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+                return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
             }
             
-            return new CommandResponse(_guid, GetIdent(), 204, $"{_name}");
+            return new CommandResponse(Guid, GetIdent(), StatCodes.NO_CONTENT, $"{Name}");
         }
     }
 
@@ -269,10 +269,10 @@ namespace ServerApp.Core.Server.Commands
             }
             catch (Exception e)
             {
-               return new CommandResponse(Guid.Empty, CommandType.eUndef, 400, e.Message);
+               return new CommandResponse(Guid.Empty, CommandType.eUndef,  StatCodes.BAD_REQUEST, e.Message);
             }
 
-            return new CommandResponse(Guid.Empty, CommandType.eUndef, 204, "Undefined command type");
+            return new CommandResponse(Guid.Empty, CommandType.eUndef, StatCodes.NO_CONTENT, "Undefined command type");
         }
     }
 }

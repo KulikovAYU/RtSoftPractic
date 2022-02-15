@@ -6,21 +6,21 @@ namespace ServerApp.Core.Server.Commands
 
     public abstract class AbstractRemoteCmd
     {
-        protected readonly Guid _guid;
-        protected readonly string _name;
-        protected readonly string _args;
+        public Guid Guid { get; }
+        public string Name { get; }
+        public string Args { get; }
 
         protected AbstractRemoteCmd(Guid guid,string name, string args)
         {
-            _guid = guid;
-            _name = name;
-            _args = args;
+            Guid = guid;
+            Name = name;
+            Args = args;
         }
 
         public abstract CommandType GetIdent();
 
         public abstract Response Execute();
 
-        public override string ToString() => $"Command {GetType()} ; name = {_name}; ags = {_args}";
+        public override string ToString() => $"Command {GetType()} ; name = {Name}; ags = {Args}";
     }
 }

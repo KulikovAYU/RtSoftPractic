@@ -13,15 +13,13 @@ namespace ClientApp.Models
 
     public class CommandsGroup<T> : ViewModelBase, ICommandsGroup where T : AbstractItem, new()
     {
-        protected CommandsGroup()
-        {
+        protected CommandsGroup() =>
             New = () =>
             {
                 var itm = new T();
                 itm.Parent = this;
                 Commands.Add(itm);
             };
-        }
 
         public string Name { get; } = typeof(T).Name;
 

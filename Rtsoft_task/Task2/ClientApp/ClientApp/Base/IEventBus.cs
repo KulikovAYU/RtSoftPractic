@@ -11,6 +11,6 @@ namespace ClientApp.Base
 
         Task OnMqqtEvent(MqttApplicationMessageReceivedEventArgs args);
 
-        void OnResponse(string message);
+        void OnResponse(string? message);
     }
 }

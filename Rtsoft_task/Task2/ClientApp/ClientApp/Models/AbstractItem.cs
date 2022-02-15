@@ -20,9 +20,9 @@ namespace ClientApp.Models
 
         public State Status { get; private set; } = State.Stopped;
 
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
 
-        public string Args { get; set; }
+        public string Args { get; set; }= "";
 
         public ICommandsGroup Parent { get; set; }
 

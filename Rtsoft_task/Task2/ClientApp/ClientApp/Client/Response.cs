@@ -16,7 +16,7 @@ namespace ClientApp.Client
             private set => _guid = value;
         }
 
-        public bool FromJSON(string cmdJSON)
+        public bool FromJSON(string? cmdJSON)
         {
             try
             {

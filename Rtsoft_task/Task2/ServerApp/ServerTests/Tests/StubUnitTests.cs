@@ -52,7 +52,7 @@ public class StubUnitTests : IClassFixture<StubTestServerCfg>, IDisposable
     }
 
     [Fact]
-    public void RunRemoteDbus()
+    public void RunRemoteDbusPositiveResult()
     {
         string serviceName = "foo-daemon.service";
         bool expectedResult = true;
@@ -66,11 +66,29 @@ public class StubUnitTests : IClassFixture<StubTestServerCfg>, IDisposable
 
         var resp = new CommandResponse(Guid.Empty, CommandType.eUndef, -1).FromJson(sDataIncomming);
 
-        Assert.Equal(resp?.StatusCode == 200, expectedResult);
+        Assert.Equal(resp?.StatusCode == StatCodes.SUCSESS, expectedResult);
     }
-
+    
     [Fact]
-    public void StopRemoteDbus()
+    public void RunRemoteDbusNegativeResult()
+    {
+        string serviceName = "negative-foo-daemon.service";
+        bool expectedResult = false;
+        
+        var remoteCmd = new ClientCommand(CommandType.eRunDbus) {Guid = Guid.NewGuid(), Name = serviceName};
+
+        string runRemoteProcCmd = remoteCmd.ToJson();
+        _sWriter.WriteLine(runRemoteProcCmd);
+
+        string? sDataIncomming = _sReader.ReadLine();
+
+        var resp = new CommandResponse(Guid.Empty, CommandType.eUndef, -1).FromJson(sDataIncomming);
+
+        Assert.Equal(resp?.StatusCode == StatCodes.SUCSESS, expectedResult);
+    }
+    
+    [Fact]
+    public void StopRemoteDbusPositiveResult()
     {
         string serviceName = "foo-daemon.service";
         bool expectedResult = true;
@@ -84,7 +102,25 @@ public class StubUnitTests : IClassFixture<StubTestServerCfg>, IDisposable
 
         var resp = new CommandResponse(Guid.Empty, CommandType.eUndef, -1).FromJson(sDataIncomming);
 
-        Assert.Equal(resp?.StatusCode == 200, expectedResult);
+        Assert.Equal(resp?.StatusCode == StatCodes.SUCSESS, expectedResult);
+    }
+    
+    [Fact]
+    public void StopRemoteDbusNegativeResult()
+    {
+        string serviceName = "negative-foo-daemon.service";
+        bool expectedResult = false;
+        
+        var remoteCmd = new ClientCommand(CommandType.eStopDbus) {Guid = Guid.NewGuid(), Name = serviceName};
+
+        string runRemoteProcCmd = remoteCmd.ToJson();
+        _sWriter.WriteLine(runRemoteProcCmd);
+
+        string? sDataIncomming = _sReader.ReadLine();
+
+        var resp = new CommandResponse(Guid.Empty, CommandType.eUndef, StatCodes.UNDEF).FromJson(sDataIncomming);
+
+        Assert.Equal(resp?.StatusCode == StatCodes.SUCSESS, expectedResult);
     }
 
     public void Dispose()
